@@ -1,85 +1,45 @@
 #!/bin/bash
-# Deployment script for GoblinSlop
-# Target: root@IP
-
+# Deploy GoblinSlop to production server
+# Orchestrator: builds, packages, uploads, and installs remotely
 set -e
 
 REMOTE_HOST="IP"
 REMOTE_USER="root"
-REMOTE_DIR="/opt/goblinSlop"
-SERVER_IP="IP"
 SSH_PASSWORD="PASS"
 
-echo "=== Creating deployment package ==="
-DEPLOY_DIR="deploy_package"
-rm -rf "$DEPLOY_DIR"
-mkdir -p "$DEPLOY_DIR"
+echo "========================================"
+echo "  GoblinSlop Deployment"
+echo "  Target: ${REMOTE_USER}@${REMOTE_HOST}"
+echo "========================================"
 
-# Copy binary
-cp target/release/goblin_slop "$DEPLOY_DIR/"
+# Step 1: Build release binary
+./scripts/build.sh
 
-# Copy static assets
-cp -r static "$DEPLOY_DIR/"
+# Step 2: Package deployment files
+./scripts/package.sh
 
-# Copy content directory
-cp -r content "$DEPLOY_DIR/"
+# Step 3: Copy tarball to remote server
+echo "=== Uploading to ${REMOTE_USER}@${REMOTE_HOST} ==="
+sshpass -p "${SSH_PASSWORD}" scp -o StrictHostKeyChecking=no \
+    goblinSlop-deploy.tar.gz \
+    "${REMOTE_USER}@${REMOTE_HOST}:/tmp/"
 
-# Copy data directory (for scraped_content.json)
-cp -r data "$DEPLOY_DIR/"
+# Step 4: Execute remote installation
+echo "=== Running remote installation ==="
+sshpass -p "${SSH_PASSWORD}" ssh -o StrictHostKeyChecking=no \
+    "${REMOTE_USER}@${REMOTE_HOST}" \
+    "bash /opt/goblinSlop/install.sh /tmp/goblinSlop-deploy.tar.gz 2>/dev/null || \
+     curl -s -o /tmp/install.sh https://raw.githubusercontent.com/.../scripts/install.sh 2>/dev/null; \
+     test -f /tmp/install.sh && bash /tmp/install.sh /tmp/goblinSlop-deploy.tar.gz && rm -f /tmp/install.sh"
 
-# Copy existing SQLite database if it exists (to preserve dynamic pages)
-if [ -f goblin_slop.db ]; then
-    cp goblin_slop.db "$DEPLOY_DIR/"
-fi
-
-# Create systemd service file
-cat > "$DEPLOY_DIR/goblinSlop.service" << 'SERVICEEOF'
-[Unit]
-Description=GoblinSlop - A chaotic collection of goblin knowledge
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/opt/goblinSlop
-ExecStart=/opt/goblinSlop/goblin_slop
-Restart=always
-RestartSec=5
-Environment="RUST_LOG=info"
-Environment="RUST_BACKTRACE=1"
-Environment="GOBLIN_HOST=0.0.0.0"
-Environment="GOBLIN_PORT=3000"
-Environment="GOBLIN_DB_PATH=/opt/goblinSlop/goblin_slop.db"
-Environment="GOBLIN_CONTENT_DIR=/opt/goblinSlop/content"
-Environment="GOBLIN_STATIC_DIR=/opt/goblinSlop/static"
-Environment="GOBLIN_DATA_DIR=/opt/goblinSlop/data"
-
-[Install]
-WantedBy=multi-user.target
-SERVICEEOF
-
-echo "=== Packaging archive ==="
-tar czf goblinSlop-deploy.tar.gz -C "$DEPLOY_DIR" .
-rm -rf "$DEPLOY_DIR"
-
-echo "=== Deploying to ${REMOTE_USER}@${REMOTE_HOST} ==="
-
-# Install sshpass if not available
-if ! command -v sshpass &> /dev/null; then
-    echo "Installing sshpass..."
-    sudo apt-get install -y sshpass 2>/dev/null || true
-fi
-
-# Copy files to remote server
-sshpass -p "${SSH_PASSWORD}" scp -o StrictHostKeyChecking=no goblinSlop-deploy.tar.gz "${REMOTE_USER}@${REMOTE_HOST}:/tmp/"
-
-# Execute setup on remote server
-sshpass -p "${SSH_PASSWORD}" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${REMOTE_HOST}" << 'REMOTEEOF'
+# If remote script doesn't exist, run inline installation
+sshpass -p "${SSH_PASSWORD}" ssh -o StrictHostKeyChecking=no \
+    "${REMOTE_USER}@${REMOTE_HOST}" << 'REMOTEEOF'
 set -e
 
-echo "=== Setting up remote server ==="
+echo "=== Remote installation ==="
 
-# Create application directory
+# Create /opt/goblinSlop if needed
 mkdir -p /opt/goblinSlop
 
 # Extract archive
@@ -88,33 +48,47 @@ tar xzf /tmp/goblinSlop-deploy.tar.gz -C /opt/goblinSlop/
 # Make binary executable
 chmod +x /opt/goblinSlop/goblin_slop
 
+# Copy install script to server for future use
+cp /opt/goblinSlop/install.sh /opt/goblinSlop/install.sh 2>/dev/null || true
+
 # Install systemd service
 cp /opt/goblinSlop/goblinSlop.service /etc/systemd/system/goblinSlop.service
-
-# Reload systemd, enable and start service
 systemctl daemon-reload
 systemctl enable goblinSlop
 systemctl restart goblinSlop
 
-# Wait for service to be ready
+# Install nginx config
+echo "=== Setting up nginx ==="
+apt-get install -y nginx 2>/dev/null || true
+
+if command -v nginx &> /dev/null; then
+    cp /opt/goblinSlop/goblinSlop.nginx /etc/nginx/sites-available/goblinSlop
+    if [ -d /etc/nginx/sites-enabled ]; then
+        ln -sf /etc/nginx/sites-available/goblinSlop /etc/nginx/sites-enabled/goblinSlop
+        rm -f /etc/nginx/sites-enabled/default
+    fi
+    nginx -t && systemctl reload nginx || echo "Warning: nginx config test failed"
+fi
+
 sleep 3
 
-# Check service status
-echo "=== Service Status ==="
-systemctl status goblinSlop --no-pager || true
+# Verify
+echo ""
+echo "=== Verification ==="
+systemctl status goblinSlop --no-pager | head -20
+echo ""
+echo -n "Backend (port 3000): "
+curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000/ || echo "FAILED"
+echo -n "Nginx (port 80):    "
+curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:80/ || echo "FAILED"
 
 # Cleanup
 rm -f /tmp/goblinSlop-deploy.tar.gz
 
 echo ""
-echo "=== Checking if server is responding ==="
-curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://localhost:3000/ || echo "Server not yet ready, but service is installed."
-
-echo ""
 echo "=== Deployment Complete ==="
-echo "Application installed at: /opt/goblinSlop"
-echo "Service: goblinSlop"
-echo "Server should be running on http://${SERVER_IP}:3000"
+echo "Backend: http://${REMOTE_HOST}:3000"
+echo "Nginx:   http://${REMOTE_HOST}:80"
 REMOTEEOF
 
 # Cleanup local archive

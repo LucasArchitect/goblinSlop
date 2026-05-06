@@ -97,6 +97,7 @@ The SQLite `Connection` is non-thread-safe, so it is wrapped in `Arc<Mutex<Conne
 ├── Cargo.toml                   # Rust project manifest with dependencies
 ├── Cargo.lock                   # Dependency lock file (auto-generated)
 ├── goblin_slop.db               # SQLite database (auto-created on first run)
+├── deploy.sh                    # Orchestrator: build → package → upload → install
 ├── content/                     # Markdown content library (source files)
 │   ├── goblin_lore.md           #   Goblin folklore and mythology
 │   ├── goblin_tricks.md         #   Goblin tricks and pranks
@@ -104,7 +105,13 @@ The SQLite `Connection` is non-thread-safe, so it is wrapped in `Arc<Mutex<Conne
 │   └── sam_altman_goblins.md    #   Sam Altman goblin-coded analysis
 ├── data/                        # Scraped/gathered data
 │   └── scraped_content.json     #   Wikipedia goblin data (via fetch-mcp)
+├── scripts/                     # Deployment and management scripts
+│   ├── build.sh                 #   Build release binary
+│   ├── package.sh               #   Package files into deploy tarball
+│   ├── install.sh               #   Remote installation (runs on server)
+│   └── manage.sh                #   Server management utility
 ├── src/                         # Rust source code
+│   ├── config.rs                #   Configuration from environment variables
 │   ├── main.rs                  #   Server entrypoint, startup logic
 │   ├── db.rs                    #   SQLite schema, CRUD operations
 │   ├── content.rs               #   Markdown→HTML loader
@@ -677,32 +684,70 @@ kill %1
 | Detail | Value |
 |--------|-------|
 | **Server IP** | `IP` |
-| **Port** | `3000` |
-| **URL** | `http://IP:3000` |
+| **URL** | `http://IP` (port 80 via nginx) |
+| **Backend** | `http://127.0.0.1:3000` (internal only) |
 | **SSH Login** | `root@IP` |
 | **OS** | Ubuntu 24.04.4 LTS |
 | **Install Path** | `/opt/goblinSlop` |
 | **Service Name** | `goblinSlop` (systemd) |
+| **Reverse Proxy** | nginx (port 80 → 127.0.0.1:3000) |
 
-### Deployment Script (`deploy.sh`)
+### Architecture
 
-A deployment script is included in the project root. It automates the full deployment process:
+```
+Browser ──▶ Nginx (port 80) ──▶ GoblinSlop (127.0.0.1:3000)
+```
 
-1. **Package** — Creates a tarball containing:
-   - Release binary (`target/release/goblin_slop`)
-   - `static/` directory (CSS, robots.txt)
-   - `content/` directory (markdown files)
-   - `data/` directory (scraped content)
+Nginx on port 80 proxies all requests to the GoblinSlop backend on `127.0.0.1:3000`. The backend is not exposed directly to the internet.
+
+### Nginx Configuration
+
+```nginx
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Stored at `/etc/nginx/sites-available/goblinSlop` on the server. The default nginx site is disabled.
+
+### Deployment Scripts (`scripts/` directory)
+
+The deployment process is split into modular scripts:
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/build.sh` | Build the release binary (`cargo build --release`) |
+| `scripts/package.sh` | Package binary + static files + content + DB + service + nginx config into tarball |
+| `scripts/install.sh` | Remote installation script (installs systemd service + nginx config, starts everything) |
+| `scripts/manage.sh` | Server management utility (status, logs, restart, stop, start, nginx reload, health check) |
+| `deploy.sh` | **Orchestrator** — calls `build.sh` → `package.sh` → upload → run `install.sh` remotely |
+
+### `deploy.sh` (Orchestrator Workflow)
+
+1. `./scripts/build.sh` — Builds the release binary
+2. `./scripts/package.sh` — Creates `goblinSlop-deploy.tar.gz` containing:
+   - Release binary (`goblin_slop`)
+   - `static/`, `content/`, `data/` directories
    - SQLite database (if exists)
-   - systemd service file
-
-2. **Transfer** — Uses `sshpass` + `scp` to copy the tarball to the server
-
-3. **Install** — On the remote server:
-   - Extracts to `/opt/goblinSlop`
-   - Installs systemd service at `/etc/systemd/system/goblinSlop.service`
-   - Enables and starts the service
-   - Verifies HTTP 200 response from `localhost:3000`
+   - `goblinSlop.service` (systemd unit)
+   - `goblinSlop.nginx` (nginx site config)
+   - `install.sh` (copied to server for future use)
+3. Uploads tarball to server via `sshpass` + `scp`
+4. Runs remote installation:
+   - Extracts tarball to `/opt/goblinSlop`
+   - Installs systemd service
+   - Installs nginx config and reloads
+   - Restarts the service
+   - Verifies health checks
 
 ### systemd Service Configuration
 
@@ -720,6 +765,12 @@ Restart=always
 RestartSec=5
 Environment="RUST_LOG=info"
 Environment="RUST_BACKTRACE=1"
+Environment="GOBLIN_HOST=127.0.0.1"
+Environment="GOBLIN_PORT=3000"
+Environment="GOBLIN_DB_PATH=/opt/goblinSlop/goblin_slop.db"
+Environment="GOBLIN_CONTENT_DIR=/opt/goblinSlop/content"
+Environment="GOBLIN_STATIC_DIR=/opt/goblinSlop/static"
+Environment="GOBLIN_DATA_DIR=/opt/goblinSlop/data"
 
 [Install]
 WantedBy=multi-user.target
@@ -729,68 +780,71 @@ Key features:
 - **Auto-restart** — `Restart=always` with 5-second delay ensures the server recovers from crashes
 - **Logging** — `RUST_LOG=info` enables application logs visible via `journalctl -u goblinSlop`
 - **On-boot start** — `WantedBy=multi-user.target` starts the service automatically after boot
+- **Internal binding** — `GOBLIN_HOST=127.0.0.1` ensures the backend is not publicly accessible
+- **Config via env vars** — All paths configured through environment variables, not hard-coded
 
 ### Deployment Commands
 
 ```bash
-# Build release binary
-cargo build --release
-
-# Run the deployment script
+# One-command deployment (builds + packages + uploads + installs)
 bash deploy.sh
+
+# Or run individual steps:
+./scripts/build.sh
+./scripts/package.sh
+# Then manually: scp goblinSlop-deploy.tar.gz root@IP:/tmp/
+# Then SSH and run: bash /opt/goblinSlop/install.sh /tmp/goblinSlop-deploy.tar.gz
 ```
 
-### Server Management
+### Server Management (`scripts/manage.sh`)
 
 ```bash
-# SSH into the server (password: PASS)
-ssh root@IP
-
 # Check service status
-systemctl status goblinSlop
+./scripts/manage.sh status
 
-# View logs
-journalctl -u goblinSlop -f
+# Follow logs (Ctrl+C to exit)
+./scripts/manage.sh logs
 
 # Restart the service
-systemctl restart goblinSlop
+./scripts/manage.sh restart
 
 # Stop the service
-systemctl stop goblinSlop
+./scripts/manage.sh stop
+
+# Start the service
+./scripts/manage.sh start
+
+# Restart nginx
+./scripts/manage.sh nginx:restart
+
+# Run health check on all endpoints
+./scripts/manage.sh check
+
+# SSH into the server
+./scripts/manage.sh ssh
 ```
 
 ### Updating the Server
 
 ```bash
-# On local machine:
-# 1. Make your code changes
-# 2. Build the release binary
-cargo build --release
-
-# 3. SSH into the server
-ssh root@IP
-
-# 4. Stop the service
-systemctl stop goblinSlop
-
-# 5. Copy the new binary
-# (run this from local machine in another terminal)
-scp target/release/goblin_slop root@IP:/opt/goblinSlop/goblin_slop
-
-# 6. Restart the service
-ssh root@IP "systemctl start goblinSlop"
-
-# Or just use the deploy script which handles all of this:
+# Quickest: run the deploy script which handles everything
 bash deploy.sh
+
+# Manual update (scp binary only):
+cargo build --release
+ssh root@IP "systemctl stop goblinSlop"
+scp target/release/goblin_slop root@IP:/opt/goblinSlop/goblin_slop
+ssh root@IP "systemctl start goblinSlop"
 ```
 
 ### Firewall Notes
 
-The server listens on port 3000. If a firewall is active (`ufw`, `iptables`), ensure port 3000 is open:
+The backend listens only on `127.0.0.1:3000` (internal). Only port 80 (nginx) needs to be publicly open:
 
 ```bash
 # If using ufw
-ufw allow 3000/tcp
+ufw allow 80/tcp
+ufw deny 3000/tcp
 ```
 
 ---
