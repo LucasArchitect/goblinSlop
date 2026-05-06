@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# This site is designed to be fully crawlable.
+# All paths lead to goblin-generated content.
+# There are no 404 errors - only dynamically created pages.
+
+Sitemap: /api/all
