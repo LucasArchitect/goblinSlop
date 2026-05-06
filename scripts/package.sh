@@ -52,11 +52,11 @@ Environment="GOBLIN_DATA_DIR=/opt/goblinSlop/data"
 WantedBy=multi-user.target
 SERVICEEOF
 
-# Create nginx config
+# Create nginx config (template — certbot manages SSL after first deploy)
 cat > "$DEPLOY_DIR/goblinSlop.nginx" << 'NGINXEOF'
 server {
     listen 80;
-    server_name _;
+    server_name goblin.geno.su;
 
     location / {
         proxy_pass http://127.0.0.1:3000;
@@ -67,6 +67,14 @@ server {
     }
 }
 NGINXEOF
+
+# Create certbot renewal hook script
+cat > "$DEPLOY_DIR/renew-hook.sh" << 'RENEWEOF'
+#!/bin/bash
+# Post-renewal hook — reload nginx after certificate renewal
+systemctl reload nginx || true
+RENEWEOF
+chmod +x "$DEPLOY_DIR/renew-hook.sh"
 
 # Package everything
 tar czf goblinSlop-deploy.tar.gz -C "$DEPLOY_DIR" .

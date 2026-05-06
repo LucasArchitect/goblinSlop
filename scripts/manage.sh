@@ -42,16 +42,45 @@ case "${1:-help}" in
         ;;
     check)
         echo "=== Checking endpoints ==="
-        echo -n "Home (port 80):   "
-        curl -s -o /dev/null -w "%{http_code}\n" http://IP/
-        echo -n "Home (port 3000): "
-        curl -s -o /dev/null -w "%{http_code}\n" http://IP:3000/
+        echo -n "HTTPS:           "
+        curl -s -o /dev/null -w "%{http_code}\n" https://goblin.geno.su/
+        echo -n "HTTP→HTTPS:      "
+        curl -s -o /dev/null -w "%{http_code} → %{redirect_url}\n" http://goblin.geno.su/
         echo -n "Goblin Lore:     "
-        curl -s -o /dev/null -w "%{http_code}\n" http://IP/goblin-lore
+        curl -s -o /dev/null -w "%{http_code}\n" https://goblin.geno.su/goblin-lore
         echo -n "Dynamic page:    "
-        curl -s -o /dev/null -w "%{http_code}\n" http://IP/some-test-path
+        curl -s -o /dev/null -w "%{http_code}\n" https://goblin.geno.su/some-test-path
         echo -n "API /api/all:    "
-        curl -s -o /dev/null -w "%{http_code}\n" http://IP/api/all
+        curl -s -o /dev/null -w "%{http_code}\n" https://goblin.geno.su/api/all
+        echo -n "Backend (127.0.0.1:3000): "
+        curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/
+        ;;
+    certbot:renew)
+        echo "=== Manually renewing Let's Encrypt ==="
+        sshpass -p "${SSH_PASSWORD}" ssh -o StrictHostKeyChecking=no "${SSH_TARGET}" "certbot renew 2>&1"
+        echo "Renewal complete."
+        ;;
+    certbot:status)
+        echo "=== Certificate Status ==="
+        sshpass -p "${SSH_PASSWORD}" ssh -o StrictHostKeyChecking=no "${SSH_TARGET}" "certbot certificates 2>&1"
+        ;;
+    help|*)
+        echo "GoblinSlop Server Management"
+        echo ""
+        echo "Usage: ./scripts/manage.sh <command>"
+        echo ""
+        echo "Commands:"
+        echo "  status          Show systemd service status"
+        echo "  logs            Follow service logs (Ctrl+C to exit)"
+        echo "  restart         Restart the goblinSlop service"
+        echo "  stop            Stop the goblinSlop service"
+        echo "  start           Start the goblinSlop service"
+        echo "  nginx:restart   Test and reload nginx config"
+        echo "  ssh             SSH into the server"
+        echo "  check           Run HTTP checks against all endpoints"
+        echo "  certbot:renew   Manually renew Let's Encrypt certificate"
+        echo "  certbot:status  Show certificate expiry info"
+        echo "  help            Show this help message"
         ;;
     help|*)
         echo "GoblinSlop Server Management"
