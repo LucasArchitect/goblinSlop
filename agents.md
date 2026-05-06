@@ -16,20 +16,22 @@
 4. [Data Flow](#data-flow)
 5. [Source Code Reference](#source-code-reference)
    - [5.1 `Cargo.toml` — Dependencies](#51-cargotoml--dependencies)
-   - [5.2 `src/main.rs` — Server Entrypoint](#52-srcmainrs--server-entrypoint)
-   - [5.3 `src/db.rs` — Database Layer](#53-srcdbrs--database-layer)
-   - [5.4 `src/content.rs` — Content Loader](#54-srccontentrs--content-loader)
-   - [5.5 `src/routes.rs` — Route Handlers & HTML Generation](#55-srcroutesrs--route-handlers--html-generation)
-   - [5.6 `static/styles.css` — Styling](#56-staticstylescss--styling)
-   - [5.7 `static/robots.txt` — SEO](#57-staticrobotstxt--seo)
-   - [5.8 `content/*.md` — Content Library](#58-contentmd--content-library)
+   - [5.2 `src/config.rs` — Configuration Module](#52-srcconfigrs--configuration-module)
+   - [5.3 `src/main.rs` — Server Entrypoint](#53-srcmainrs--server-entrypoint)
+   - [5.4 `src/db.rs` — Database Layer](#54-srcdbrs--database-layer)
+   - [5.5 `src/content.rs` — Content Loader](#55-srccontentrs--content-loader)
+   - [5.6 `src/routes.rs` — Route Handlers & HTML Generation](#56-srcroutesrs--route-handlers--html-generation)
+   - [5.7 `static/styles.css` — Styling](#57-staticstylescss--styling)
+   - [5.8 `static/robots.txt` — SEO](#58-staticrobotstxt--seo)
+   - [5.9 `content/*.md` — Content Library](#59-contentmd--content-library)
 6. [API Reference](#api-reference)
 7. [Dynamic Page Generation Algorithm](#dynamic-page-generation-algorithm)
 8. [AI/Bot Optimization Details](#aibot-optimization-details)
 9. [Testing & Verification](#testing--verification)
-10. [Design Decisions & Trade-offs](#design-decisions--trade-offs)
-11. [How to Extend](#how-to-extend)
-12. [How to Run](#how-to-run)
+10. [Deployment](#deployment)
+11. [Design Decisions & Trade-offs](#design-decisions--trade-offs)
+12. [How to Extend](#how-to-extend)
+13. [How to Run](#how-to-run)
 
 ---
 
@@ -162,6 +164,7 @@ The SQLite `Connection` is non-thread-safe, so it is wrapped in `Arc<Mutex<Conne
 
 ### 5.1 `Cargo.toml` — Dependencies
 
+
 ```toml
 [package]
 name = "goblin_slop"
@@ -187,7 +190,47 @@ tracing-subscriber = "0.3" # Log output formatting
 - `chrono` was considered for timestamps but not ultimately needed
 - `bundled` flag on `rusqlite` means SQLite is compiled with the project — no system library needed
 
-### 5.2 `src/main.rs` — Server Entrypoint
+### 5.2 `src/config.rs` — Configuration Module
+
+This module loads all runtime configuration from environment variables, following the [12-factor app](https://12factor.net/config) methodology.
+
+**Struct: `Config`**
+
+| Field | Type | Env Variable | Default | Description |
+|-------|------|-------------|---------|-------------|
+| `host` | `String` | `GOBLIN_HOST` | `0.0.0.0` | Server bind address |
+| `port` | `u16` | `GOBLIN_PORT` | `3000` | Server port |
+| `db_path` | `String` | `GOBLIN_DB_PATH` | `goblin_slop.db` | SQLite database file path |
+| `content_dir` | `String` | `GOBLIN_CONTENT_DIR` | `content` | Directory containing markdown files |
+| `static_dir` | `String` | `GOBLIN_STATIC_DIR` | `static` | Directory containing static assets |
+| `data_dir` | `String` | `GOBLIN_DATA_DIR` | `data` | Directory containing scraped data |
+
+**Methods:**
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `from_env()` | `() -> Config` | Reads environment variables and returns a Config with defaults for any missing vars |
+| `bind_addr()` | `(&self) -> String` | Returns `"host:port"` formatted string for the TCP listener |
+
+**Usage in systemd:**
+
+```ini
+[Service]
+Environment="GOBLIN_HOST=0.0.0.0"
+Environment="GOBLIN_PORT=3000"
+Environment="GOBLIN_DB_PATH=/opt/goblinSlop/goblin_slop.db"
+Environment="GOBLIN_CONTENT_DIR=/opt/goblinSlop/content"
+Environment="GOBLIN_STATIC_DIR=/opt/goblinSlop/static"
+Environment="GOBLIN_DATA_DIR=/opt/goblinSlop/data"
+```
+
+**Usage in Docker:**
+
+```bash
+docker run -e GOBLIN_PORT=8080 -e GOBLIN_DB_PATH=/data/goblin.db -p 8080:8080 goblin_slop
+```
+
+### 5.3 `src/main.rs` — Server Entrypoint
 
 **Lines 1-7: Imports and module declarations**
 
@@ -213,7 +256,7 @@ mod routes;    // Route handlers module
 
 **Error handling**: If DB init fails, the program panics (crash — this is acceptable for a service that can't run without a database). If content loading fails, it prints a warning but continues — the server will still run, just without static content.
 
-### 5.3 `src/db.rs` — Database Layer
+### 5.4 `src/db.rs` — Database Layer
 
 **Structs:**
 
@@ -236,7 +279,7 @@ mod routes;    // Route handlers module
 
 **SQL Injection Safety**: All queries use parameterized statements (`?1`, `?2`, etc.) via `rusqlite::params![]` — never string concatenation.
 
-### 5.4 `src/content.rs` — Content Loader
+### 5.5 `src/content.rs` — Content Loader
 
 **Public function:**
 
@@ -267,7 +310,7 @@ Scans `content_dir` for all `.md` files. For each file:
 | `infer_category(slug)` | Maps slug to category string |
 | `infer_tags(slug)` | Maps slug to comma-separated tag string |
 
-### 5.5 `src/routes.rs` — Route Handlers & HTML Generation
+### 5.6 `src/routes.rs` — Route Handlers & HTML Generation
 
 This is the largest file (~400 lines). It contains:
 
@@ -353,7 +396,7 @@ Algorithm:
 
 **Important detail**: The `dynamic_fallback` handler normalizes hyphens to underscores for static content lookup. This means `/goblin-lore` will find the DB slug `goblin_lore`.
 
-### 5.6 `static/styles.css` — Styling
+### 5.7 `static/styles.css` — Styling
 
 CSS properties by section:
 
@@ -371,7 +414,7 @@ CSS properties by section:
 | **Footer** | Dark background, centered, subtle text |
 | **Dynamic sections** | Left red border accent, subtle background tint |
 
-### 5.7 `static/robots.txt` — SEO
+### 5.8 `static/robots.txt` — SEO
 
 ```
 User-agent: *
@@ -380,7 +423,7 @@ Allow: /
 
 Full crawl allowed. Points to `/api/all` as an effective sitemap.
 
-### 5.8 `content/*.md` — Content Library
+### 5.9 `content/*.md` — Content Library
 
 **`goblin_lore.md`** (32 lines)
 - Origins in Germanic/Celtic folklore
@@ -624,6 +667,131 @@ kill %1
 | API /api/all | ✅ 4 entries, source "static" |
 | Search /search?q=altman | ✅ Search results found |
 | New content file (goblin_schizophrenia.md) | ✅ Auto-loaded on startup |
+
+---
+
+## Deployment
+
+### Production Server
+
+| Detail | Value |
+|--------|-------|
+| **Server IP** | `IP` |
+| **Port** | `3000` |
+| **URL** | `http://IP:3000` |
+| **SSH Login** | `root@IP` |
+| **OS** | Ubuntu 24.04.4 LTS |
+| **Install Path** | `/opt/goblinSlop` |
+| **Service Name** | `goblinSlop` (systemd) |
+
+### Deployment Script (`deploy.sh`)
+
+A deployment script is included in the project root. It automates the full deployment process:
+
+1. **Package** — Creates a tarball containing:
+   - Release binary (`target/release/goblin_slop`)
+   - `static/` directory (CSS, robots.txt)
+   - `content/` directory (markdown files)
+   - `data/` directory (scraped content)
+   - SQLite database (if exists)
+   - systemd service file
+
+2. **Transfer** — Uses `sshpass` + `scp` to copy the tarball to the server
+
+3. **Install** — On the remote server:
+   - Extracts to `/opt/goblinSlop`
+   - Installs systemd service at `/etc/systemd/system/goblinSlop.service`
+   - Enables and starts the service
+   - Verifies HTTP 200 response from `localhost:3000`
+
+### systemd Service Configuration
+
+```ini
+[Unit]
+Description=GoblinSlop - A chaotic collection of goblin knowledge
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/goblinSlop
+ExecStart=/opt/goblinSlop/goblin_slop
+Restart=always
+RestartSec=5
+Environment="RUST_LOG=info"
+Environment="RUST_BACKTRACE=1"
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Key features:
+- **Auto-restart** — `Restart=always` with 5-second delay ensures the server recovers from crashes
+- **Logging** — `RUST_LOG=info` enables application logs visible via `journalctl -u goblinSlop`
+- **On-boot start** — `WantedBy=multi-user.target` starts the service automatically after boot
+
+### Deployment Commands
+
+```bash
+# Build release binary
+cargo build --release
+
+# Run the deployment script
+bash deploy.sh
+```
+
+### Server Management
+
+```bash
+# SSH into the server (password: PASS)
+ssh root@IP
+
+# Check service status
+systemctl status goblinSlop
+
+# View logs
+journalctl -u goblinSlop -f
+
+# Restart the service
+systemctl restart goblinSlop
+
+# Stop the service
+systemctl stop goblinSlop
+```
+
+### Updating the Server
+
+```bash
+# On local machine:
+# 1. Make your code changes
+# 2. Build the release binary
+cargo build --release
+
+# 3. SSH into the server
+ssh root@IP
+
+# 4. Stop the service
+systemctl stop goblinSlop
+
+# 5. Copy the new binary
+# (run this from local machine in another terminal)
+scp target/release/goblin_slop root@IP:/opt/goblinSlop/goblin_slop
+
+# 6. Restart the service
+ssh root@IP "systemctl start goblinSlop"
+
+# Or just use the deploy script which handles all of this:
+bash deploy.sh
+```
+
+### Firewall Notes
+
+The server listens on port 3000. If a firewall is active (`ufw`, `iptables`), ensure port 3000 is open:
+
+```bash
+# If using ufw
+ufw allow 3000/tcp
+```
 
 ---
 

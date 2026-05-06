@@ -47,6 +47,12 @@ Restart=always
 RestartSec=5
 Environment="RUST_LOG=info"
 Environment="RUST_BACKTRACE=1"
+Environment="GOBLIN_HOST=0.0.0.0"
+Environment="GOBLIN_PORT=3000"
+Environment="GOBLIN_DB_PATH=/opt/goblinSlop/goblin_slop.db"
+Environment="GOBLIN_CONTENT_DIR=/opt/goblinSlop/content"
+Environment="GOBLIN_STATIC_DIR=/opt/goblinSlop/static"
+Environment="GOBLIN_DATA_DIR=/opt/goblinSlop/data"
 
 [Install]
 WantedBy=multi-user.target
