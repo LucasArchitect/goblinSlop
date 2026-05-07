@@ -109,7 +109,9 @@ The SQLite `Connection` is non-thread-safe, so it is wrapped in `Arc<Mutex<Conne
 │   ├── build.sh                 #   Build release binary
 │   ├── package.sh               #   Package files into deploy tarball
 │   ├── install.sh               #   Remote installation (runs on server)
-│   └── manage.sh                #   Server management utility
+│   ├── manage.sh                #   Server management utility
+│   ├── logs.sh                  #   Nginx log viewer (tail, top IPs, slow requests, etc.)
+│   └── goblinSlop.nginx.conf    #   Main nginx config with custom log format
 ├── src/                         # Rust source code
 │   ├── config.rs                #   Configuration from environment variables
 │   ├── main.rs                  #   Server entrypoint, startup logic
@@ -764,6 +766,8 @@ The deployment process is split into modular scripts:
 | `scripts/package.sh` | Package binary + static files + content + DB + service + nginx config into tarball |
 | `scripts/install.sh` | Remote installation script (installs systemd service + nginx config, starts everything) |
 | `scripts/manage.sh` | Server management utility (status, logs, restart, stop, start, nginx reload, health check) |
+| `scripts/logs.sh` | Nginx access log viewer: tail, follow, top IPs, top URLs, status codes, slow requests |
+| `scripts/goblinSlop.nginx.conf` | Main nginx config with custom `goblin_format` log format (upstream response time) |
 | `deploy.sh` | **Orchestrator** — calls `build.sh` → `package.sh` → upload → run `install.sh` remotely |
 
 ### `deploy.sh` (Orchestrator Workflow)
@@ -887,6 +891,49 @@ The site uses a free Let's Encrypt certificate for `goblin.geno.su`:
 - **Auto-renewal**: Certbot installs a systemd timer that checks twice daily and renews automatically
 - **Nginx reload**: After renewal, nginx is reloaded automatically via certbot's built-in hook
 - **Check status**: `./scripts/manage.sh certbot:status` or `certbot certificates` on the server
+
+### Nginx Logging
+
+Nginx is configured with a custom `goblin_format` log format that includes upstream response time. Logs are written to `/var/log/nginx/access.log` on the server.
+
+**Log format fields:**
+```
+$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" upstream=$upstream_addr rt=$upstream_response_time ms
+```
+
+**Log Viewer (`scripts/logs.sh`)**
+
+```bash
+# Show last 20 log entries (default)
+./scripts/logs.sh tail
+
+# Show last 100 entries
+./scripts/logs.sh tail -n 100
+
+# Follow logs in real-time (Ctrl+C to exit)
+./scripts/logs.sh follow
+
+# Show recent error log entries
+./scripts/logs.sh errors
+
+# Show top 10 client IPs by request count
+./scripts/logs.sh top
+
+# Show most requested URLs
+./scripts/logs.sh urls
+
+# Show HTTP status code distribution
+./scripts/logs.sh status
+
+# Show most common user agents
+./scripts/logs.sh agents
+
+# Show today's request count
+./scripts/logs.sh today
+
+# Show slowest requests (by upstream response time)
+./scripts/logs.sh slow
+```
 
 ### Firewall Notes
 
