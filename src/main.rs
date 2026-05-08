@@ -3,6 +3,7 @@ use tower_http::services::ServeDir;
 
 mod config;
 mod content;
+mod data_loader;
 mod db;
 mod routes;
 
@@ -23,6 +24,12 @@ async fn main() {
     println!("Loading content from markdown files...");
     if let Err(e) = content::load_content_from_dir(&cfg.db_path, &cfg.content_dir) {
         eprintln!("Warning: Could not load all content: {}", e);
+    }
+
+    // Load scraped content into database
+    println!("Loading scraped content...");
+    if let Err(e) = data_loader::load_scraped_content(&cfg.db_path, &cfg.data_dir) {
+        eprintln!("Warning: Could not load scraped content: {}", e);
     }
 
     // Build application state
