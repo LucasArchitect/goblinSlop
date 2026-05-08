@@ -47,9 +47,6 @@ async fn main() {
 
     println!("🧌 GoblinSlop server running on http://{}", bind_addr);
     println!("📚 Content loaded. Browse to / for home page.");
-    println!("🔮 Any URL will generate dynamic goblin content!");
-    println!("📡 API: /api/all, /api/search?q=..., /api/content/:slug");
-    println!("📝 Raw content: /raw/:slug");
     println!("⚙️  Config: host={} port={} db={} content={} static={} data={}",
         cfg.host, cfg.port, cfg.db_path, cfg.content_dir, cfg.static_dir, cfg.data_dir);
 

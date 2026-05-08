@@ -4,7 +4,7 @@
 > **Language**: Rust (edition 2024)  
 > **Framework**: Axum 0.7  
 > **Database**: SQLite (rusqlite 0.32 bundled)  
-> **Purpose**: A dynamically-generated website about goblins, goblin tricks, and the Sam Altman schizophrenia connection. No 404s — every URL path generates unique goblin content.
+> **Purpose**: A website about goblins, goblin tricks, the Sam Altman schizophrenia connection, and goblins across anime, games, and pop culture. No 404s — every URL path leads somewhere goblin.
 
 ---
 
@@ -20,34 +20,37 @@
    - [5.3 `src/main.rs` — Server Entrypoint](#53-srcmainrs--server-entrypoint)
    - [5.4 `src/db.rs` — Database Layer](#54-srcdbrs--database-layer)
    - [5.5 `src/content.rs` — Content Loader](#55-srccontentrs--content-loader)
-   - [5.6 `src/routes.rs` — Route Handlers & HTML Generation](#56-srcroutesrs--route-handlers--html-generation)
-   - [5.7 `static/styles.css` — Styling](#57-staticstylescss--styling)
-   - [5.8 `static/robots.txt` — SEO](#58-staticrobotstxt--seo)
-   - [5.9 `content/*.md` — Content Library](#59-contentmd--content-library)
+   - [5.6 `src/data_loader.rs` — Scraped Content Loader](#56-srcdata_loaderrs--scraped-content-loader)
+   - [5.7 `src/routes/` — Route Handlers Module Directory](#57-srcroutes--route-handlers-module-directory)
+   - [5.8 `static/styles.css` — Styling](#58-staticstylescss--styling)
+   - [5.9 `static/robots.txt` — SEO](#59-staticrobotstxt--seo)
+   - [5.10 `content/*.md` — Content Library](#510-contentmd--content-library)
+   - [5.11 `data/scraped_content.json` — Scraped Data](#511-datascraped_contentjson--scraped-data)
 6. [API Reference](#api-reference)
 7. [Dynamic Page Generation Algorithm](#dynamic-page-generation-algorithm)
-8. [AI/Bot Optimization Details](#aibot-optimization-details)
-9. [Testing & Verification](#testing--verification)
-10. [Deployment](#deployment)
-11. [Design Decisions & Trade-offs](#design-decisions--trade-offs)
-12. [How to Extend](#how-to-extend)
-13. [How to Run](#how-to-run)
+8. [Testing & Verification](#testing--verification)
+9. [Deployment](#deployment)
+10. [Design Decisions & Trade-offs](#design-decisions--trade-offs)
+11. [How to Extend](#how-to-extend)
+12. [How to Run](#how-to-run)
 
 ---
 
 ## Project Overview
 
-GoblinSlop is a Rust web server that serves two kinds of content:
+GoblinSlop is a Rust web server that serves three kinds of content:
 
 1. **Static content** — Hand-crafted Markdown files about goblin lore, tricks, the Sam Altman/goblin connection, and the schizophrenia/perception connection, rendered to HTML.
-2. **Dynamic content** — For ANY URL path that doesn't match static content, the server generates a unique goblin-themed page on-the-fly using keywords extracted from the URL path.
+2. **Scraped content** — Curated entries from MyAnimeList, VNDB, IMDb, Wikipedia, TV Tropes, D&D, Pathfinder, Warhammer, Warcraft, MTG, and other sources loaded from `data/scraped_content.json`.
+3. **Dynamic content** — For ANY URL path that doesn't match existing content, the server generates a unique goblin-themed page on-the-fly using keywords extracted from the URL path. The user never sees any indication that pages are generated — everything looks equally authentic.
 
 Key features:
-- **No 404 errors** — every path returns HTTP 200 with dynamically generated goblin content
+- **No 404 errors** — every path returns HTTP 200 with goblin content
 - **AI/Bot friendly** — JSON-LD structured data, semantic HTML, raw text endpoints, JSON API
 - **Markdown source** — all static content authored in Markdown, auto-converted to HTML
 - **Cached dynamics** — dynamically generated pages are cached in SQLite so repeat requests are fast
 - **Pure Rust templating** — no template engine dependency; HTML is built with `String::replace()`
+- **Routes as module directory** — handlers, templates, and generators are split across separate files
 
 ---
 
@@ -56,7 +59,7 @@ Key features:
 ```
 ┌─────────────┐     ┌──────────────────┐     ┌──────────────┐
 │   Browser   │────▶│   Axum Router    │────▶│  SQLite DB   │
-│   / Bot     │     │  (src/routes.rs) │     │ (goblin_slop.db)
+│   / Bot     │     │  (src/routes/)   │     │ (goblin_slop.db)
 └─────────────┘     └──────────────────┘     └──────────────┘
                            │                         ▲
                            │                         │
@@ -74,11 +77,12 @@ Key features:
 1. Client sends HTTP GET to a path (e.g., `/goblin-lore` or `/some-random-path`)
 2. Axum router matches the path against defined routes or the fallback handler
 3. Fallback handler checks SQLite for static content matching the path (with hyphen→underscore normalization)
-4. If static content found → render using `render_content_page()` with the stored HTML
+4. If static content found → render using `templates::render_content_page()` with the stored HTML
 5. If not found → check `dynamic_pages` cache table
-6. If cached → render using `render_dynamic_page()`
-7. If not cached → parse path into keywords, generate content using randomized templates, store in cache, render
-8. Every page includes JSON-LD structured data in the `<head>` for AI/bot parsing
+6. If cached → render using `templates::render_dynamic_page()`
+7. If not cached → parse path into keywords, generate content using `generator::generate_dynamic_page_content()`, store in cache, render
+8. All pages include JSON-LD structured data in the `<head>` for AI/bot parsing
+9. **No "dynamically generated" badges, summon messages, or AI notes are shown to the user** — all pages appear equally authentic
 
 ### Thread Safety Model
 
@@ -104,7 +108,7 @@ The SQLite `Connection` is non-thread-safe, so it is wrapped in `Arc<Mutex<Conne
 │   ├── goblin_schizophrenia.md  #   Schizophrenia/perception connection
 │   └── sam_altman_goblins.md    #   Sam Altman goblin-coded analysis
 ├── data/                        # Scraped/gathered data
-│   └── scraped_content.json     #   Wikipedia goblin data (via fetch-mcp)
+│   └── scraped_content.json     #   21 curated goblin entries from MAL, VNDB, IMDb, D&D, etc.
 ├── scripts/                     # Deployment and management scripts
 │   ├── build.sh                 #   Build release binary
 │   ├── package.sh               #   Package files into deploy tarball
@@ -117,7 +121,12 @@ The SQLite `Connection` is non-thread-safe, so it is wrapped in `Arc<Mutex<Conne
 │   ├── main.rs                  #   Server entrypoint, startup logic
 │   ├── db.rs                    #   SQLite schema, CRUD operations
 │   ├── content.rs               #   Markdown→HTML loader
-│   └── routes.rs                #   Route handlers, HTML templates, dynamic generator
+│   ├── data_loader.rs           #   JSON scraped content loader
+│   └── routes/                  #   Route handlers module directory
+│       ├── mod.rs               #     Module declaration, AppState, create_router()
+│       ├── handlers.rs          #     All 9 route handler functions
+│       ├── templates.rs         #     HTML template rendering functions
+│       └── generator.rs         #     Dynamic goblin page content generation
 ├── static/                      # Static files served at /static/
 │   ├── styles.css               #   Goblin-themed dark CSS
 │   └── robots.txt               #   SEO/crawler instructions
@@ -138,7 +147,7 @@ The SQLite `Connection` is non-thread-safe, so it is wrapped in `Arc<Mutex<Conne
 | `title` | TEXT | Page title (extracted from first `# ` heading) |
 | `body_markdown` | TEXT | Raw Markdown source |
 | `body_html` | TEXT | Pre-rendered HTML from Markdown |
-| `category` | TEXT | Inferred category (lore, tricks, sam_altman, schizophrenia, general) |
+| `category` | TEXT | Inferred category (lore, tricks, sam_altman, schizophrenia, anime, pop_culture, ttrpg, games, visual_novels, linguistics, general) |
 | `tags` | TEXT | Comma-separated tags (e.g., `goblin,lore`) |
 | `is_dynamic` | INTEGER | Boolean: 0 = static; 1 = dynamic |
 
@@ -165,14 +174,16 @@ The SQLite `Connection` is non-thread-safe, so it is wrapped in `Arc<Mutex<Conne
    - Extracts title from first `# ` heading
    - Infers category and tags from filename
    - Inserts/updates into `content` table
-3. Axum server starts listening on `0.0.0.0:3000`
+3. `data_loader::load_scraped_content("goblin_slop.db", "data")` reads `data/scraped_content.json`:
+   - Each entry becomes a `ContentEntry` (same schema as markdown content)
+   - Categories include: `anime`, `pop_culture`, `visual_novels`, `ttrpg`, `games`, `literature`, `linguistics`
+4. Axum server starts listening on `0.0.0.0:3000`
 
 ---
 
 ## Source Code Reference
 
 ### 5.1 `Cargo.toml` — Dependencies
-
 
 ```toml
 [package]
@@ -194,9 +205,6 @@ tracing-subscriber = "0.3" # Log output formatting
 ```
 
 **Why these dependencies?**
-- `tera` was removed because it had parsing issues and was replaced with pure Rust string substitution
-- `reqwest` was considered for a scraper module but the actual scraping was done via MCP
-- `chrono` was considered for timestamps but not ultimately needed
 - `bundled` flag on `rusqlite` means SQLite is compiled with the project — no system library needed
 
 ### 5.2 `src/config.rs` — Configuration Module
@@ -214,56 +222,32 @@ This module loads all runtime configuration from environment variables, followin
 | `static_dir` | `String` | `GOBLIN_STATIC_DIR` | `static` | Directory containing static assets |
 | `data_dir` | `String` | `GOBLIN_DATA_DIR` | `data` | Directory containing scraped data |
 
-**Methods:**
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `from_env()` | `() -> Config` | Reads environment variables and returns a Config with defaults for any missing vars |
-| `bind_addr()` | `(&self) -> String` | Returns `"host:port"` formatted string for the TCP listener |
-
-**Usage in systemd:**
-
-```ini
-[Service]
-Environment="GOBLIN_HOST=0.0.0.0"
-Environment="GOBLIN_PORT=3000"
-Environment="GOBLIN_DB_PATH=/opt/goblinSlop/goblin_slop.db"
-Environment="GOBLIN_CONTENT_DIR=/opt/goblinSlop/content"
-Environment="GOBLIN_STATIC_DIR=/opt/goblinSlop/static"
-Environment="GOBLIN_DATA_DIR=/opt/goblinSlop/data"
-```
-
-**Usage in Docker:**
-
-```bash
-docker run -e GOBLIN_PORT=8080 -e GOBLIN_DB_PATH=/data/goblin.db -p 8080:8080 goblin_slop
-```
-
 ### 5.3 `src/main.rs` — Server Entrypoint
 
-**Lines 1-7: Imports and module declarations**
-
+**Module declarations:**
 ```rust
-mod content;   // Content loading module
-mod db;        // Database operations module
-mod routes;    // Route handlers module
+mod config;
+mod content;
+mod data_loader;
+mod db;
+mod routes;
 ```
 
-**Lines 8-43: `main()` function**
-
+**`main()` function flow:**
 ```
 1. Initialize tracing logger
 2. Open/create SQLite database at "goblin_slop.db"
 3. Wrap connection in Arc<Mutex<>> for thread safety
 4. Load all .md files from "content/" directory into DB
-5. Create AppState { db }
-6. Build Axum router with all routes, nest static file service at /static
-7. Bind TCP listener to 0.0.0.0:3000
-8. Print startup info
-9. Serve requests forever
+5. Load all scraped content from "data/scraped_content.json" into DB
+6. Create AppState { db }
+7. Build Axum router with all routes, nest static file service at /static
+8. Bind TCP listener to 0.0.0.0:3000
+9. Print startup info
+10. Serve requests forever
 ```
 
-**Error handling**: If DB init fails, the program panics (crash — this is acceptable for a service that can't run without a database). If content loading fails, it prints a warning but continues — the server will still run, just without static content.
+**Error handling**: If DB init fails, the program panics. If content loading fails, it prints a warning but continues.
 
 ### 5.4 `src/db.rs` — Database Layer
 
@@ -286,11 +270,7 @@ mod routes;    // Route handlers module
 | `insert_dynamic_page` | `(conn: &Connection, page: &DynamicPage) -> SqlResult<()>` | INSERT OR REPLACE into dynamic_pages table |
 | `get_dynamic_page` | `(conn: &Connection, path: &str) -> SqlResult<Option<DynamicPage>>` | SELECT by path, returns None if not found |
 
-**SQL Injection Safety**: All queries use parameterized statements (`?1`, `?2`, etc.) via `rusqlite::params![]` — never string concatenation.
-
 ### 5.5 `src/content.rs` — Content Loader
-
-**Public function:**
 
 ```rust
 pub fn load_content_from_dir(db_path: &str, content_dir: &str) -> Result<(), Box<dyn std::error::Error>>
@@ -298,98 +278,65 @@ pub fn load_content_from_dir(db_path: &str, content_dir: &str) -> Result<(), Box
 
 Scans `content_dir` for all `.md` files. For each file:
 1. Read full file contents
-2. Extract the filename stem as the `slug` (e.g., `goblin_lore.md` → `"goblin_lore"`)
+2. Extract the filename stem as the `slug`
 3. Convert Markdown to HTML via `pulldown_cmark::Parser`
 4. Extract title from first `# ` heading line, or title-case the slug as fallback
-5. Infer category from slug substrings:
-   - `"goblin" + "trick"` → `"tricks"`
-   - `"goblin" + "lore"` → `"lore"`
-   - `"altman" or "sam"` → `"sam_altman"`
-   - `"schizo"` → `"schizophrenia"`
-   - otherwise → `"general"`
-6. Infer tags from slug substrings similarly
-7. Insert `ContentEntry` into database
+5. Infer category and tags from slug substrings
+6. Insert `ContentEntry` into database
 
-**Private helper functions:**
-
-| Function | Purpose |
-|----------|---------|
-| `markdown_to_html(md)` | Parses Markdown and returns HTML string |
-| `extract_title(md, fallback)` | Finds first `# ` line; if none exists, title-cases the slug |
-| `infer_category(slug)` | Maps slug to category string |
-| `infer_tags(slug)` | Maps slug to comma-separated tag string |
-
-### 5.6 `src/routes.rs` — Route Handlers & HTML Generation
-
-This is the largest file (~400 lines). It contains:
-
-**Structs:**
-
-| Struct | Fields | Purpose |
-|--------|--------|---------|
-| `AppState` | `db: Arc<Mutex<Connection>>` | Shared application state injected into every handler |
-| `SearchQuery` | `q: Option<String>` | Query parameter deserialization for `/search?q=...` |
-| `ApiResponse<T>` | `success: bool, data: T, source: String` | Generic JSON API response wrapper |
-
-**Router Construction:**
+### 5.6 `src/data_loader.rs` — Scraped Content Loader
 
 ```rust
-pub fn create_router(state: AppState) -> Router
+pub fn load_scraped_content(db_path: &str, data_dir: &str) -> Result<(), Box<dyn std::error::Error>>
 ```
 
-Creates a two-layer router:
-1. **Inner router** (exact routes): `/`, `/search`, `/all`, `/raw/:slug`, `/api/content/:slug`, `/api/dynamic/*path`, `/api/search`, `/api/all`
-2. **Outer router** (fallback): Any path that doesn't match the inner router gets handled by `dynamic_fallback`
+Reads `data/scraped_content.json` and loads each entry into the database:
 
-The two routers are merged via `Router::new().fallback(get(dynamic_fallback)).with_state(state).merge(app)` — this ensures exact routes take priority, and everything else falls through to the dynamic generator.
+**JSON format:**
+```json
+{
+  "sources": [
+    {
+      "source": "MyAnimeList - Goblin Slayer",
+      "url": "https://myanimelist.net/anime/31964/Goblin_Slayer",
+      "category": "anime",
+      "tags": "goblin,anime,fantasy,dark,adventure",
+      "slug": "goblin-slayer-anime",
+      "data": "Full text content..."
+    }
+  ]
+}
+```
 
-**HTML Template Constants:**
+**Processing per entry:**
+1. If `slug` is empty, auto-generate from source name via `slugify()`
+2. If `category` is empty, default to `"scraped"`
+3. If `tags` is empty, default to `"goblin,scraped"`
+4. Wrap data in a markdown document with source attribution: `# {source}\n\n> Source: [{source}]({url})\n\n{data}`
+5. Convert to HTML and insert as a `ContentEntry`
 
-Three string constants form the page skeleton:
+**Currently loaded entries: 21 sources** covering MyAnimeList (5), VNDB (1), IMDb (5), TV Tropes (1), D&D (1), Warcraft (1), Warhammer (1), MTG (1), Pathfinder (1), Discworld (1), Goblin Mode linguistics (1), Japanese band GOBLIN (1).
 
-| Constant | Purpose | Placeholders |
-|----------|---------|--------------|
-| `BASE_HTML_HEAD` | DOCTYPE, `<head>` with SEO meta, JSON-LD, nav bar, opening `<main>` | `{TITLE}`, `{DESCRIPTION}`, `{CANONICAL}`, `{SCHEMA_TYPE}`, `{SCHEMA_NAME}`, `{SCHEMA_DESC}`, `{KEYWORDS}` |
-| `BASE_HTML_FOOT` | Closing `</main>`, footer, `</body>`, `</html>` | None |
-| (inline format!) | Article body | Various per-page |
+### 5.7 `src/routes/` — Route Handlers Module Directory
 
-**Page Renderers:**
+The original monolithic `src/routes.rs` was refactored into a directory module with four files:
 
-| Function | Signature | Purpose |
-|----------|-----------|---------|
-| `render_content_page` | `(entry: &ContentEntry, canonical_url: &str) -> String` | Renders a static content page with JSON-LD, AI metadata note |
-| `render_dynamic_page` | `(dyn_page: &DynamicPage, canonical_url: &str) -> String` | Renders a dynamically-generated page with "summoned from void" banner |
-| `render_static_page` | `(title, body_html, category, tags, canonical_url) -> String` | Renders a simple page from raw HTML body (for home, search, all) |
+#### `src/routes/mod.rs`
+Module declaration and router construction:
 
-**Dynamic Content Generation:**
+```rust
+pub mod generator;
+pub mod handlers;
+pub mod templates;
+```
 
-Three arrays of template strings:
+- Declares `AppState` struct
+- `create_router(state: AppState) -> Router` — builds a two-layer router:
+  1. **Inner router** (exact routes): `/`, `/search`, `/all`, `/raw/:slug`, `/api/content/:slug`, `/api/dynamic/*path`, `/api/search`, `/api/all`
+  2. **Outer router** (fallback): Any path that doesn't match the inner router gets handled by `dynamic_fallback`
 
-| Array | Size | Purpose |
-|-------|------|---------|
-| `GOBLIN_TITLES` | 10 | Title templates with `{keyword}` placeholder |
-| `GOBLIN_INTROS` | 5 | Introductory paragraph templates |
-| `GOBLIN_BODIES` | 4 | Body paragraph templates |
-
-**`generate_dynamic_page_content(path, keywords) → DynamicPage`**
-
-Algorithm:
-1. Randomly select one title, one intro, and one body template
-2. Use the first keyword as `primary_keyword`
-3. Replace `{keyword}` in all templates with `primary_keyword`
-4. Generate related sections for remaining keywords (up to 3)
-5. Assemble into HTML with `<section>` tags and the "Goblin Verdict" conclusion
-
-**`parse_path_into_keywords(path) → Vec<String>`**
-
-Algorithm:
-1. Split on `/`
-2. For each segment, split on `-` and `_`
-3. Lowercase each word
-4. Filter out words ≤ 2 characters
-5. Filter out stop words (the, a, an, and, or, but, in, on, at, to, for, of, by, with, is, are, was, were, be, been)
-
-**Route Handlers:**
+#### `src/routes/handlers.rs`
+All 9 route handler functions:
 
 | Handler | Route | Logic |
 |---------|-------|-------|
@@ -403,11 +350,32 @@ Algorithm:
 | `api_search` | `GET /api/search?q=` | Return search results as JSON |
 | `api_all` | `GET /api/all` | Return all ContentEntries as JSON |
 
-**Important detail**: The `dynamic_fallback` handler normalizes hyphens to underscores for static content lookup. This means `/goblin-lore` will find the DB slug `goblin_lore`.
+#### `src/routes/templates.rs`
+HTML template rendering functions:
 
-### 5.7 `static/styles.css` — Styling
+| Function | Signature | Purpose |
+|----------|-----------|---------|
+| `render_content_page` | `(entry: &ContentEntry, canonical_url: &str) -> String` | Renders a static content page with JSON-LD |
+| `render_dynamic_page` | `(dyn_page: &DynamicPage, _canonical_url: &str) -> String` | Renders a dynamically-generated page **without revealing it was generated** — no badges, no summon text, no AI notes |
+| `render_static_page` | `(title, body_html, category, tags, canonical_url) -> String` | Renders a simple page from raw HTML body (for home, search, all) |
 
-CSS properties by section:
+**Key design principle: The user must never know pages are generated.** All dynamic/metadata markers from `render_dynamic_page()` have been removed (no "✨ Dynamically Generated" badge, no "summoned from the void" text, no AI metadata notes, no console.log scripts).
+
+#### `src/routes/generator.rs`
+Dynamic page content generation logic:
+
+**Template arrays:**
+| Array | Size | Purpose |
+|-------|------|---------|
+| `GOBLIN_TITLES` | 10 | Title templates with `{keyword}` placeholder |
+| `GOBLIN_INTROS` | 5 | Introductory paragraph templates |
+| `GOBLIN_BODIES` | 4 | Body paragraph templates |
+
+**`generate_dynamic_page_content(path, keywords) → DynamicPage`** — selects random templates, replaces `{keyword}` with the primary keyword, generates related sections for additional keywords, and assembles into HTML.
+
+**`parse_path_into_keywords(path) → Vec<String>`** — splits URL path by `/`, `-`, `_`, lowercases, filters stop words and short words.
+
+### 5.8 `static/styles.css` — Styling
 
 | Section | Key Properties |
 |---------|---------------|
@@ -417,47 +385,43 @@ CSS properties by section:
 | **Headings** | Red `#e94560` color for h1/h2, lighter `#a0a0c0` for h3 |
 | **Strong text** | Gold `#ffd700` |
 | **Links** | Blue `#4fc3f7`, red hover `#e94560` |
-| **Dynamic badge** | Red background, white text, bold |
 | **Code blocks** | Dark background `#0f3460` |
 | **Search form** | Dark input with red focus border, red submit button |
 | **Footer** | Dark background, centered, subtle text |
-| **Dynamic sections** | Left red border accent, subtle background tint |
 
-### 5.8 `static/robots.txt` — SEO
+### 5.9 `static/robots.txt` — SEO
 
 ```
 User-agent: *
 Allow: /
 ```
 
-Full crawl allowed. Points to `/api/all` as an effective sitemap.
+Full crawl allowed.
 
-### 5.9 `content/*.md` — Content Library
+### 5.10 `content/*.md` — Content Library
 
-**`goblin_lore.md`** (32 lines)
-- Origins in Germanic/Celtic folklore
-- 4 goblin types: Hobgoblins, Redcaps, Puck, Kobolds
-- Goblin habits: stealing, chaos, riddles
-- "Goblin mode" cultural reference
+**`goblin_lore.md`** (32 lines) — Origins in Germanic/Celtic folklore, 4 goblin types, habits, "Goblin mode" cultural reference
 
-**`goblin_tricks.md`** (35 lines)
-- Classic tricks: missing sock, key jumble, whisper campaign
-- Digital-age tricks: autocorrect corruption, captcha captivity, hallucination seed
-- Sam Altman connection: goblin-coded behavior analysis
-- Schizophrenia perception framework
-- Goblin trick detection guide
+**`goblin_tricks.md`** (35 lines) — Classic and digital-age tricks, Sam Altman connection, schizophrenia perception framework
 
-**`sam_altman_goblins.md`** (39 lines)
-- November 2023 firing saga analyzed as goblin trick
-- Goblin mode embrace evidence
-- Schizophrenia connection: hypervigilance, delusional thinking, shared delusions
-- "Goblin Verdict" conclusion
+**`sam_altman_goblins.md`** (39 lines) — November 2023 firing saga as goblin trick, goblin mode evidence, schizophrenia connection
 
-**`goblin_schizophrenia.md`** (30 lines)
-- Shared architecture: pattern recognition, faces in wood grain
-- Internet amplifier effect
-- Sam Altman as projection surface
-- Therapeutic framework: externalized manifestations, cognitive distortion metaphors
+**`goblin_schizophrenia.md`** (30 lines) — Shared architecture between goblins and schizophrenia, internet amplifier effect, Sam Altman as projection surface
+
+### 5.11 `data/scraped_content.json` — Scraped Data
+
+21 curated entries about goblins across media:
+
+| Source Category | Entries |
+|----------------|---------|
+| **Anime** | Goblin Slayer, Goblin Slayer: Goblin's Crown, Goblin Slayer II, Goblin Is Very Strong, Goblins in Anime Overview, Japanese band GOBLIN |
+| **Visual Novels** | Goblin-related VNs (Chaos;Head, Eustia, Rance, Evenicle, etc.) |
+| **Pop Culture** | Labyrinth (Goblin King Jareth), Harry Potter Goblins, The Hobbit Goblins, Willow Brownies, Gremlins, Green Goblin/Hobgoblin |
+| **TV Tropes** | Goblins in Media — 8 common goblin tropes across all media |
+| **TTRPG** | D&D Goblin Lore, Pathfinder Goblins |
+| **Games** | Warcraft Goblins, Warhammer Goblins, Magic: The Gathering Goblins |
+| **Literature** | Discworld Goblins (Terry Pratchett) |
+| **Linguistics** | Goblin Mode — Oxford Word of the Year 2022 |
 
 ---
 
@@ -469,9 +433,9 @@ Full crawl allowed. Points to `/api/all` as an effective sitemap.
 |----------|--------|-------------|----------|
 | `/` | GET | Home page with content listing | HTML 200 |
 | `/search?q=...` | GET | Full-text search results | HTML 200 |
-| `/all` | GET | List all static pages | HTML 200 |
+| `/all` | GET | List all static + scraped pages | HTML 200 |
 | `/raw/:slug` | GET | Raw Markdown source | text/plain 200 |
-| `/*` | GET | Any path → dynamic goblin page | HTML 200 |
+| `/*` | GET | Any path → goblin page (seamless, no "generated" indicators) | HTML 200 |
 
 ### JSON API Endpoints
 
@@ -535,7 +499,6 @@ Output: "ai-takeover-sam-altman"
 Input:  "ai-takeover-sam-altman"
 Split:  ["takeover", "sam", "altman"]
 Filter: ["takeover", "sam", "altman"]
-(Note: "ai" is ≤2 chars, "sam" is 3 chars so kept)
 ```
 
 ### Step 3: Content Assembly
@@ -546,19 +509,14 @@ title = random from GOBLIN_TITLES with {keyword} → "takeover"
       = "The takeover Trickster"
 
 intro = random from GOBLIN_INTROS with {keyword} → "takeover"
-      = "Deep in the goblin tunnels..."
-
 body  = random from GOBLIN_BODIES with {keyword} → "takeover"
-      = "The goblins have long maintained that takeover..."
 
 related_sections for ["sam", "altman"]:
   → "<h2>Goblins and sam</h2><p>..."
   → "<h2>Goblins and altman</h2><p>..."
 
-verdict = "The Goblin Verdict on takeover..."
-
 Final HTML structure:
-<div class='dynamic-generated'>
+<div>
   <section><p>intro</p><p>body</p></section>
   related_sections...
   <section><h2>The Goblin Verdict</h2><p>...</p></section>
@@ -570,60 +528,9 @@ Generated `DynamicPage` is inserted into `dynamic_pages` table via `INSERT OR RE
 
 ---
 
-## AI/Bot Optimization Details
-
-Every page, both static and dynamic, includes:
-
-### 1. JSON-LD Structured Data
-```html
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Article"|"WebPage"|"CollectionPage",
-  "name": "Page Title",
-  "description": "Page Description",
-  "url": "/path",
-  "about": {
-    "@type": "Thing",
-    "name": "Goblins",
-    "description": "Goblin folklore, mythology, tricks..."
-  },
-  "keywords": "goblin,lore"
-}
-</script>
-```
-
-### 2. Semantic HTML Elements
-- `<article>` for content pages
-- `<section>` for content sections
-- `<header>` for page headers
-- `<footer>` for page footers
-- `<nav>` for navigation
-- `<main>` for primary content
-
-### 3. AI Metadata Notes
-Each page includes a visible "AI Note" explaining how to access raw data:
-- `/raw/{slug}` for raw Markdown
-- `/api/content/{slug}` for JSON
-
-### 4. Heading Hierarchy
-- H1: Page title
-- H2: Major sections
-- H3: Subsections
-- Semantic heading levels maintained throughout
-
-### 5. Robotics
-- Full crawl allowed in `robots.txt`
-- Canonical URL link in every page `<head>`
-- Meta description in every page `<head>`
-
----
-
 ## Testing & Verification
 
 ### Automated Test Script
-
-The following commands verify all core functionality:
 
 ```bash
 # Fresh start
@@ -637,27 +544,31 @@ sleep 3
 curl -s http://localhost:3000/ | head -3
 # Expected: <!DOCTYPE html><html>...
 
-# Test 2: Static content via hyphens
-curl -s http://localhost:3000/goblin-lore | grep -c "Static Content"
-# Expected: 1
-
-# Test 3: Dynamic page generation
-curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/random-goblin
+# Test 2: Static content
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/goblin-lore
 # Expected: 200
 
-# Test 4: Raw markdown endpoint
+# Test 3: Scraped content
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/goblin-slayer-anime
+# Expected: 200
+
+# Test 4: Dynamic page (looks identical to any other page)
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/random-goblin
+# Expected: 200 (no "generated" badges visible)
+
+# Test 5: Raw markdown endpoint
 curl -s http://localhost:3000/raw/goblin_lore | head -3
 # Expected: # Goblin Lore: The Ancient Tricksters
 
-# Test 5: JSON API
+# Test 6: JSON API
 curl -s http://localhost:3000/api/all | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 print(f'{len(d[\"data\"])} entries from {d[\"source\"]}')
 "
-# Expected: 4 entries from static
+# Expected: 25 entries from static
 
-# Test 6: Search
+# Test 7: Search
 curl -s "http://localhost:3000/search?q=altman" | grep -o "Search results"
 # Expected: Search results
 
@@ -669,13 +580,13 @@ kill %1
 | Test | Result |
 |------|--------|
 | Home page (/) | ✅ HTML with content listing |
-| Static content (/goblin-lore) | ✅ "Static Content" badge present |
-| Hyphen→underscore resolution | ✅ `/goblin-lore` resolves to slug `goblin_lore` |
-| Dynamic page (/*) | ✅ HTTP 200 with goblin content |
+| Static content (/goblin-lore) | ✅ HTTP 200 |
+| Scraped content (/goblin-slayer-anime) | ✅ HTTP 200 |
+| Dynamic page (/*) | ✅ HTTP 200, no "generated" indicators |
 | Raw markdown (/raw/:slug) | ✅ Raw Markdown returned |
-| API /api/all | ✅ 4 entries, source "static" |
+| API /api/all | ✅ 25 entries (4 markdown + 21 scraped) |
 | Search /search?q=altman | ✅ Search results found |
-| New content file (goblin_schizophrenia.md) | ✅ Auto-loaded on startup |
+| No "dynamic" leaks in HTML | ✅ No badges, summon text, or AI notes |
 
 ---
 
@@ -695,7 +606,6 @@ kill %1
 | **Service Name** | `goblinSlop` (systemd) |
 | **Reverse Proxy** | nginx (port 443 → 127.0.0.1:3000) |
 | **TLS/SSL** | Let's Encrypt (auto-renewing) |
-| **Certificate Path** | `/etc/letsencrypt/live/goblin.geno.su/` |
 
 ### Architecture
 
@@ -706,338 +616,80 @@ Browser ──▶ HTTPS (443) ──▶ Nginx ──▶ GoblinSlop (127.0.0.1:30
                 └──▶ 301 redirect ──▶ HTTPS
 ```
 
-Nginx terminates TLS on port 443 and proxies to the backend on `127.0.0.1:3000`. HTTP on port 80 redirects to HTTPS via a 301 redirect managed by Certbot.
-
-### Nginx Configuration
-
-The nginx config is generated by Certbot and manages SSL automatically. The HTTP-only template used for initial deployment:
-
-```nginx
-server {
-    listen 80;
-    server_name goblin.geno.su;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-After running `certbot --nginx`, the config is expanded to:
-
-```nginx
-server {
-    server_name goblin.geno.su;
-    listen 443 ssl;
-    ssl_certificate /etc/letsencrypt/live/goblin.geno.su/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/goblin.geno.su/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-server {
-    listen 80;
-    server_name goblin.geno.su;
-    return 301 https://$host$request_uri;
-}
-```
-
-Stored at `/etc/nginx/sites-available/goblinSlop` on the server. The default nginx site is disabled.
-
-### Deployment Scripts (`scripts/` directory)
-
-The deployment process is split into modular scripts:
-
-| Script | Purpose |
-|--------|---------|
-| `scripts/build.sh` | Build the release binary (`cargo build --release`) |
-| `scripts/package.sh` | Package binary + static files + content + DB + service + nginx config into tarball |
-| `scripts/install.sh` | Remote installation script (installs systemd service + nginx config, starts everything) |
-| `scripts/manage.sh` | Server management utility (status, logs, restart, stop, start, nginx reload, health check) |
-| `scripts/logs.sh` | Nginx access log viewer: tail, follow, top IPs, top URLs, status codes, slow requests |
-| `scripts/goblinSlop.nginx.conf` | Main nginx config with custom `goblin_format` log format (upstream response time) |
-| `deploy.sh` | **Orchestrator** — calls `build.sh` → `package.sh` → upload → run `install.sh` remotely |
-
-### `deploy.sh` (Orchestrator Workflow)
-
-1. `./scripts/build.sh` — Builds the release binary
-2. `./scripts/package.sh` — Creates `goblinSlop-deploy.tar.gz` containing:
-   - Release binary (`goblin_slop`)
-   - `static/`, `content/`, `data/` directories
-   - SQLite database (if exists)
-   - `goblinSlop.service` (systemd unit)
-   - `goblinSlop.nginx` (nginx site config)
-   - `install.sh` (copied to server for future use)
-3. Uploads tarball to server via `sshpass` + `scp`
-4. Runs remote installation:
-   - Extracts tarball to `/opt/goblinSlop`
-   - Installs systemd service
-   - Installs nginx config and reloads
-   - Restarts the service
-   - Verifies health checks
-
-### systemd Service Configuration
-
-```ini
-[Unit]
-Description=GoblinSlop - A chaotic collection of goblin knowledge
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/opt/goblinSlop
-ExecStart=/opt/goblinSlop/goblin_slop
-Restart=always
-RestartSec=5
-Environment="RUST_LOG=info"
-Environment="RUST_BACKTRACE=1"
-Environment="GOBLIN_HOST=127.0.0.1"
-Environment="GOBLIN_PORT=3000"
-Environment="GOBLIN_DB_PATH=/opt/goblinSlop/goblin_slop.db"
-Environment="GOBLIN_CONTENT_DIR=/opt/goblinSlop/content"
-Environment="GOBLIN_STATIC_DIR=/opt/goblinSlop/static"
-Environment="GOBLIN_DATA_DIR=/opt/goblinSlop/data"
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Key features:
-- **Auto-restart** — `Restart=always` with 5-second delay ensures the server recovers from crashes
-- **Logging** — `RUST_LOG=info` enables application logs visible via `journalctl -u goblinSlop`
-- **On-boot start** — `WantedBy=multi-user.target` starts the service automatically after boot
-- **Internal binding** — `GOBLIN_HOST=127.0.0.1` ensures the backend is not publicly accessible
-- **Config via env vars** — All paths configured through environment variables, not hard-coded
-
-### Deployment Commands
-
-```bash
-# One-command deployment (builds + packages + uploads + installs)
-bash deploy.sh
-
-# Or run individual steps:
-./scripts/build.sh
-./scripts/package.sh
-# Then manually: scp goblinSlop-deploy.tar.gz root@IP:/tmp/
-# Then SSH and run: bash /opt/goblinSlop/install.sh /tmp/goblinSlop-deploy.tar.gz
-```
-
-### Server Management (`scripts/manage.sh`)
-
-```bash
-# Check service status
-./scripts/manage.sh status
-
-# Follow logs (Ctrl+C to exit)
-./scripts/manage.sh logs
-
-# Restart the service
-./scripts/manage.sh restart
-
-# Stop the service
-./scripts/manage.sh stop
-
-# Start the service
-./scripts/manage.sh start
-
-# Restart nginx
-./scripts/manage.sh nginx:restart
-
-# Run health check on all endpoints (HTTPS, HTTP redirect, pages, API)
-./scripts/manage.sh check
-
-# Show SSL certificate info
-./scripts/manage.sh certbot:status
-
-# Manually renew certificates
-./scripts/manage.sh certbot:renew
-
-# SSH into the server
-./scripts/manage.sh ssh
-```
-
-### Updating the Server
-
-```bash
-# Quickest: run the deploy script which handles everything
-bash deploy.sh
-
-# Manual update (scp binary only):
-cargo build --release
-ssh root@IP "systemctl stop goblinSlop"
-scp target/release/goblin_slop root@IP:/opt/goblinSlop/goblin_slop
-ssh root@IP "systemctl start goblinSlop"
-```
-
-### SSL/TLS (Let's Encrypt)
-
-The site uses a free Let's Encrypt certificate for `goblin.geno.su`:
-
-- **Issued via**: `certbot --nginx -d goblin.geno.su`
-- **Certificate location**: `/etc/letsencrypt/live/goblin.geno.su/`
-- **Auto-renewal**: Certbot installs a systemd timer that checks twice daily and renews automatically
-- **Nginx reload**: After renewal, nginx is reloaded automatically via certbot's built-in hook
-- **Check status**: `./scripts/manage.sh certbot:status` or `certbot certificates` on the server
-
-### Nginx Logging
-
-Nginx is configured with a custom `goblin_format` log format that includes upstream response time. Logs are written to `/var/log/nginx/access.log` on the server.
-
-**Log format fields:**
-```
-$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" upstream=$upstream_addr rt=$upstream_response_time ms
-```
-
-**Log Viewer (`scripts/logs.sh`)**
-
-```bash
-# Show last 20 log entries (default)
-./scripts/logs.sh tail
-
-# Show last 100 entries
-./scripts/logs.sh tail -n 100
-
-# Follow logs in real-time (Ctrl+C to exit)
-./scripts/logs.sh follow
-
-# Show recent error log entries
-./scripts/logs.sh errors
-
-# Show top 10 client IPs by request count
-./scripts/logs.sh top
-
-# Show most requested URLs
-./scripts/logs.sh urls
-
-# Show HTTP status code distribution
-./scripts/logs.sh status
-
-# Show most common user agents
-./scripts/logs.sh agents
-
-# Show today's request count
-./scripts/logs.sh today
-
-# Show slowest requests (by upstream response time)
-./scripts/logs.sh slow
-```
-
-### Firewall Notes
-
-Only ports 443 (HTTPS) and 80 (HTTP→HTTPS redirect) need to be accessible:
-
-```bash
-# If using ufw
-ufw allow 80/tcp    # HTTP (redirects to HTTPS)
-ufw allow 443/tcp   # HTTPS
-ufw deny 3000/tcp   # Backend is internal only
-```
-
 ---
 
 ## Design Decisions & Trade-offs
 
-### 1. Pure Rust String Templating vs. Template Engine
+### 1. Routes as Module Directory
 
-**Decision**: Use `String::replace()` with placeholder-based HTML constants instead of Tera/HBS.
+**Decision**: Refactored `routes.rs` (538 lines) into `routes/mod.rs` + `routes/handlers.rs` + `routes/templates.rs` + `routes/generator.rs`.
 
-**Rationale**:
-- Tera had parsing issues with the `{% extends %}` syntax
-- Pure Rust avoids an extra dependency
-- For a small number of page layouts (3 templates), string replacement is simple and fast
-- No template context management needed
+**Rationale**: Single-file module became unwieldy. Separating concerns (routing, handlers, HTML rendering, content generation) makes the codebase more maintainable.
 
-**Trade-off**: Less flexible for complex template inheritance. For a site with hundreds of unique page designs, this approach would become unwieldy.
+### 2. Scraped Data as Static JSON vs. Runtime Scraper
 
-### 2. SQLite with Mutex vs. Connection Pool
+**Decision**: Curate `scraped_content.json` manually instead of building a web scraper.
+
+**Rationale**: Web scraping at runtime is fragile (503 errors, rate limits, HTML structure changes). Manual curation produces clean, structured content without ads/nav/script garbage.
+
+### 3. Hidden Dynamic Generation
+
+**Decision**: Remove all badges, summon text, AI metadata notes, and console.log scripts from dynamically generated pages.
+
+**Rationale**: The user should never know that content is procedurally generated. Every page should look equally authentic — this is the goblin way.
+
+### 4. Pure Rust String Templating vs. Template Engine
+
+**Decision**: Use `String::replace()` with placeholder-based HTML constants.
+
+**Rationale**: No extra dependency. For a small number of page layouts (3 templates), string replacement is simple and fast.
+
+### 5. SQLite with Mutex vs. Connection Pool
 
 **Decision**: Use `Arc<Mutex<Connection>>`.
 
-**Rationale**:
-- rusqlite connections are not `Send`/`Sync` without wrapping
-- Simple to implement and understand
-- Sufficient for expected low traffic
+**Rationale**: Simple to implement. Sufficient for expected low traffic.
 
-**Trade-off**: Only one request can access the database at a time. For high-traffic production, switch to `r2d2` connection pool or move to PostgreSQL.
-
-### 3. Fallback Router vs. Wildcard Route
-
-**Decision**: Use `.fallback()` on a separate router merged with the main router.
-
-**Rationale**:
-- The `/*` wildcard route in Axum 0.7 doesn't implement the `Handler` trait properly for our use case
-- `fallback()` is the idiomatic Axum pattern for catch-all handlers
-- Allows exact routes to take priority naturally
-
-### 4. Hyphen→Underscore Normalization
+### 6. Hyphen→Underscore Normalization
 
 **Decision**: In the fallback handler, also try the slug with hyphens replaced by underscores.
 
-**Rationale**:
-- Markdown filenames use underscores (`goblin_lore.md`)
-- URL convention prefers hyphens (`/goblin-lore`)
-- This normalization makes URLs pretty while keeping file naming natural
-
-**Scope**: Only applies to static content lookup. Dynamic pages use the exact path.
-
-### 5. In-Memory Content Generation vs. Pre-computed
-
-**Decision**: Generate dynamic content at request time and cache in SQLite.
-
-**Rationale**:
-- Content is simple string replacement — very fast
-- Caching ensures repeat requests are O(1) DB lookup
-- No background job needed
+**Rationale**: Markdown filenames use underscores (`goblin_lore.md`). URL convention prefers hyphens (`/goblin-lore`). This normalization makes URLs pretty while keeping file naming natural.
 
 ---
 
 ## How to Extend
 
 ### Adding New Static Content
-
 1. Create a new Markdown file in `content/` (e.g., `content/goblin_origins.md`)
 2. Start with a `# Title` heading
 3. The server will auto-load it on next restart
 4. Access at `/goblin-origins` (hyphens replace underscores)
 
-### Adding New Dynamic Content Templates
+### Adding New Scraped Content
+1. Add a new entry to `data/scraped_content.json` with fields: `source`, `url`, `data`, `category` (optional), `tags` (optional), `slug` (optional)
+2. The server will auto-load it on next restart
 
-1. Open `src/routes.rs`
+### Adding New Dynamic Content Templates
+1. Open `src/routes/generator.rs`
 2. Add entries to `GOBLIN_TITLES`, `GOBLIN_INTROS`, or `GOBLIN_BODIES` arrays
 3. Templates use `{keyword}` as placeholder
 4. Rebuild and restart
 
 ### Adding New Routes
-
-1. Add a handler function in `src/routes.rs`
-2. Add the route in `create_router()` before the fallback
-3. If the handler needs HTML, use one of the three renderer functions or add a new one
+1. Add a handler function in `src/routes/handlers.rs`
+2. Register the route in `src/routes/mod.rs::create_router()` before the fallback
 
 ### Adding Database Capabilities
-
 1. Update schema in `db.rs::init_db()`
 2. Add CRUD functions in `db.rs`
-3. Call them from route handlers in `routes.rs`
+3. Call them from route handlers
 
 ---
 
 ## How to Run
 
 ### Prerequisites
-
 - Rust toolchain (1.92+)
 - No system-level dependencies (SQLite is bundled)
 
@@ -1058,14 +710,12 @@ cargo run
 ```
 
 ### Environment
-
-- Binds to all interfaces (`0.0.0.0`) — accessible from other machines on the network
-- Port: 3000 (hard-coded, change in `src/main.rs` line 30)
+- Binds to all interfaces (`0.0.0.0`)
+- Port: 3000 (default, configurable via `GOBLIN_PORT`)
 - Database: `goblin_slop.db` created in project root
-- Static files: served from `static/` directory at `/static/` path
+- Content: loaded from `content/` directory (Markdown files) and `data/scraped_content.json` (JSON entries)
 
 ### Clean Restart
-
 ```bash
 # Delete database and restart (fresh content load)
 rm -f goblin_slop.db
