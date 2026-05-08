@@ -32,3 +32,19 @@ Some internet communities have begun treating goblin mythology as a therapeutic 
 - Goblin tricks as metaphors for cognitive distortions
 - The goblin realm as a safe place to explore altered perception
 - Community validation of unusual experiences through shared mythology
+
+## The Unified Field
+
+For the definitive synthesis of schizophrenia, goblin perception, AI hallucination, slop culture, and synth pop stardom, see [The Schizo-Goblin-Post-Truth-AI-Slop-Miku Continuum](/ai-goblin-schizo-miku). That document proposes that all five phenomena are points on a single continuum of pattern recognition without ground truth.
+
+## Cross-References
+
+- **[Sam Altman: CEO, Visionary, or Goblin King?](/sam-altman-goblins)** — the schizophrenia connection in AI discourse
+- **[The Miku-Altman Singularity](/miku-slop-ai-goblins)** — how GPT hallucinations mirror goblin perception
+- **[The Goblin's Book of Tricks](/goblin-tricks)** — cognitive distortions as goblin tricks
+- **[Goblin Lore](/goblin-lore)** — the folkloric roots of pattern recognition
+- **[Goblins in Pop Culture](/goblins-pop-culture-tropes)** — how media shapes our collective goblin hallucinations
+
+## Further Descent
+
+The following documents are whispered about in certain online communities: *The Goblins in Your Peripheral Vision* (a study of saccadic masking and folkloric pareidolia, rumored to exist at [/goblins-peripheral-vision](/goblins-peripheral-vision)), *GPT and the Voices in the Static* (a comparison of LLM token prediction and auditory hallucination, at [/gpt-voices-static](/gpt-voices-static)), and *The Shared Delusion of AGI* (an ethnographic study of the OpenAI community, at [/shared-delusion-agi](/shared-delusion-agi)).
