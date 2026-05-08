@@ -253,6 +253,45 @@ body {
     font-size: 0.9em;
 }
 
+/* References sections */
+.references-section {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border-left: 3px solid #0f3460;
+    background: rgba(15, 52, 96, 0.2);
+    border-radius: 0 8px 8px 0;
+}
+
+.references-section h2 {
+    color: #e94560;
+    font-size: 1.2rem;
+    margin-bottom: 0.8rem;
+}
+
+.reference-list {
+    list-style: none;
+    padding: 0;
+}
+
+.reference-list li {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(15, 52, 96, 0.5);
+}
+
+.reference-list li:last-child {
+    border-bottom: none;
+}
+
+.reference-real a {
+    color: #4fc3f7;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.reference-real a:hover {
+    color: #e94560;
+}
+
 /* Footer */
 .goblin-footer {
     text-align: center;
