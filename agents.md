@@ -98,7 +98,7 @@ The SQLite `Connection` is non-thread-safe, so it is wrapped in `Arc<Mutex<Conne
 ## Directory Structure
 
 ```
-/home/azu/projects/goblinSlop/
+goblinSlop/
 ├── agents.md                    # This file — complete documentation
 ├── Cargo.toml                   # Rust project manifest with dependencies
 ├── Cargo.lock                   # Dependency lock file (auto-generated)
@@ -650,23 +650,6 @@ kill %1
 
 ---
 
-## Deployment
-
-### Production Server
-
-| Detail | Value |
-|--------|-------|
-| **Domain** | `goblin.geno.su` |
-| **URL** | `https://goblin.geno.su` (port 443, HTTPS) |
-| **HTTP Redirect** | `http://goblin.geno.su` → `https://goblin.geno.su` (301) |
-| **Backend** | `http://127.0.0.1:3000` (internal only) |
-| **SSH Deploy User** | `azu` (has sudo on the remote machine) |
-| **App User** | `goblinslop` (unprivileged, runs the binary) |
-| **OS** | Ubuntu 24.04.4 LTS |
-| **Install Path** | `/home/goblinslop/` |
-| **Service Name** | `goblinSlop` (systemd) |
-| **Reverse Proxy** | nginx (port 443 → 127.0.0.1:3000) |
-| **TLS/SSL** | Let's Encrypt (auto-renewing) |
 
 ### Architecture
 
@@ -700,9 +683,9 @@ The single deploy script handles everything:
 ### Environment Variables (.env)
 
 ```bash
-DEPLOY_USER=azu           # SSH user (must have sudo)
-DEPLOY_HOST=144.31.17.0   # Remote server IP
-APP_USER=goblinslop       # System user that runs the binary
+DEPLOY_USER=INSERT_USER           # SSH user (must have sudo)
+DEPLOY_HOST=INSERT_ADDRES   # Remote server IP
+APP_USER=INSERT_APP_USER       # System user that runs the binary
 ```
 
 ### Service Template: `deploy/goblinSlop.service`
@@ -834,8 +817,6 @@ GoblinSlop reads these at runtime (set in the service file):
 ### Commands
 
 ```bash
-# Clone or navigate to project
-cd /home/azu/projects/goblinSlop
 
 # Build (optional, cargo run builds automatically)
 cargo build
