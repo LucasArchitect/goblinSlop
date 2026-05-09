@@ -14,7 +14,7 @@ Environment="RUST_BACKTRACE=1"
 Environment="GOBLIN_HOST=127.0.0.1"
 Environment="GOBLIN_PORT=3000"
 Environment="GOBLIN_DB_PATH=/home/__APP_USER__/goblin_slop.db"
-Environment="GOBLIN_CONTENT_DIR=/home/__APP_USER__/content"
+Environment="GOBLIN_CONTENT_DIR=/home/__APP_USER__/data/content"
 Environment="GOBLIN_STATIC_DIR=/home/__APP_USER__/static"
 Environment="GOBLIN_DATA_DIR=/home/__APP_USER__/data"
 
