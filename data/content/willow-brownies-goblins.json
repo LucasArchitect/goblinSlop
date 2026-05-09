@@ -6,5 +6,13 @@
   "category": "pop_culture",
   "tags": "goblin,movie,80s,fantasy,nelwyn",
   "is_dynamic": false,
-  "date_added": "2026-05-09T17:32:51Z"
+  "date_added": "2026-05-09T17:32:51Z",
+  "references": [
+    "goblins-pop-culture-tropes",
+    "labyrinth-goblin-king",
+    "the-hobbit-goblins",
+    "gremlins-goblin-comparison",
+    "goblins-harry-potter",
+    "discworld-goblins"
+  ]
 }

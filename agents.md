@@ -172,6 +172,7 @@ Each content file in `data/content/` follows this schema:
   "body_markdown": "# Goblin Lore: The Ancient Tricksters\n\n...",
   "category": "lore",
   "tags": "goblin,lore",
+  "references": ["goblin-tricks", "goblin-schizophrenia", "slop-goblin-manifesto"],
   "is_dynamic": false,
   "date_added": "2026-05-09T17:33:37Z"
 }
@@ -184,6 +185,7 @@ Each content file in `data/content/` follows this schema:
 - `body_markdown`: Raw Markdown content (auto-converted to HTML on load)
 - `category`: Content category (lore, tricks, anime, pop_culture, ttrpg, games, visual_novels, linguistics, etc.)
 - `tags`: Comma-separated tags (defaults to `"goblin"` if empty)
+- `references`: JSON array of target slugs this article explicitly cross-references. These are matched first by the reference engine, guaranteeing meaningful links. Falls back to keyword matching + random fill if empty.
 - `is_dynamic`: Always `false` for stored content
 - `date_added`: ISO 8601 UTC timestamp when the file was created
 
@@ -408,7 +410,17 @@ Cross-reference engine:
 | `FAKE_SLUG_PARTS_B` | ~40 | Second-word pool for slug generation |
 | `FAKE_TITLE_TEMPLATES` | 20 | `{A}/{B}` title templates for fake refs |
 
-**`generate_references_html(keywords) -> String`** — matches keywords to real refs, generates 2-5 random fake refs, renders a "Cross-References" section (and 60% chance of a "Further Descent" section with 2-3 more fake refs). All references use identical CSS — no visual distinction between real and fake.
+**`generate_references_html(keywords) -> String`** — delegates to `generate_references_html_ex(keywords, None)`.
+
+**`generate_references_html_ex(keywords, exclude_slug) -> String`** — the core algorithm:
+
+1. **Keyword-matched real refs**: Scans all `REAL_PAGE_REFERENCES` for slugs that contain any keyword or vice versa. Skips the `exclude_slug` if provided (prevents self-references on content pages).
+2. **Fill to at least 3 real refs**: After keyword matching, if there are fewer than 3-4 (random) matched real refs, the remainder are picked randomly from all pages. This **guarantees every article always gets multiple real cross-reference links**.
+3. **Truncate if over 4**: If more than 3-4 matched refs, shuffle and keep only the desired count.
+4. **Generate 3-5 fake refs**: Uses `generate_random_fake_ref()` which picks random words from `FAKE_SLUG_PARTS_A` and `FAKE_SLUG_PARTS_B` plus random title templates from `FAKE_TITLE_TEMPLATES`.
+5. **Render unified block**: All real and fake references are rendered in a single `<section class='references-section'>` with identical CSS — **no visual distinction between real and fake**.
+
+**Key property**: Every page — static or dynamic — always gets multiple real links (keyword-matched + random fill) and multiple fake links in one block. No article is left reference-less.
 
 ### 5.7 `static/styles.css` — Styling
 

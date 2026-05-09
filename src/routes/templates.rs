@@ -1,5 +1,5 @@
 use crate::db::{ContentEntry, DynamicPage};
-use super::references::generate_references_html;
+use super::references::generate_references_html_ex;
 
 // ============================================================
 // HTML Template Constants
@@ -120,7 +120,7 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
         body = entry.body_html,
     ));
 
-    // Cross-references — real + random generated links in one unified block
+    // Cross-references — explicit JSON refs + keyword-matched + random fake refs in one block
     let refs_keywords: Vec<String> = entry
         .tags
         .split(',')
@@ -128,7 +128,13 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
         .chain(std::iter::once(entry.slug.split('-').map(|s| s.to_string()).collect::<Vec<_>>().join(" ")))
         .filter(|t| !t.is_empty())
         .collect();
-    html.push_str(&generate_references_html(&refs_keywords));
+    let explicit_slugs: Vec<String> = entry
+        .references
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    html.push_str(&generate_references_html_ex(&refs_keywords, Some(&entry.slug), &explicit_slugs));
 
     html.push_str(BASE_HTML_FOOT);
     html

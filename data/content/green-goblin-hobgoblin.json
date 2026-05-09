@@ -2,9 +2,17 @@
   "id": "green-goblin-hobgoblin",
   "title": "IMDb - Spider-Man: Green Goblin & Hobgoblin",
   "slug": "green-goblin-hobgoblin",
-  "body_markdown": "# IMDb - Spider-Man: Green Goblin & Hobgoblin\n\n> Source: [IMDb - Spider-Man: Green Goblin & Hobgoblin](https://www.imdb.com/title/tt0145487/)\n\nThe Green Goblin is one of Spider-Man's most iconic villains, created by Stan Lee and Steve Ditko in 1964. Norman Osborn, a ruthless industrialist, gains superhuman strength and insanity after testing an experimental formula. He adopts the Green Goblin persona, using a goblin-themed costume, a glider, and pumpkin bombs. The name draws from the folklore goblin archetype—a trickster who delights in chaos. The Green Goblin has appeared in multiple Spider-Man films: Willem Dafoe portrayed him in Sam Raimi's Spider-Man (2002) and later in Spider-Man: No Way Home (2021); James Franco played Harry Osborn as a version of the New Goblin in Spider-Man 3 (2007); and Dane DeHaan portrayed a younger Harry Osborn as the Green Goblin in The Amazing Spider-Man 2 (2014). The Hobgoblin, a successor villain introduced in the comics, carries on the goblin legacy. The 'goblin' branding in Marvel represents the chaotic, trickster, and sinister elements of the folklore origin, adapted into a high-tech supervillain concept.",
+  "body_markdown": "# IMDb - Spider-Man: Green Goblin & Hobgoblin\n\n> Source: [IMDb - Spider-Man: Green Goblin & Hobgoblin](https://www.imdb.com/title/tt0145487/)\n\nThe Green Goblin is one of Spider-Man's most iconic villains, created by Stan Lee and Steve Ditko in 1964. Norman Osborn, a ruthless industrialist, gains superhuman strength and insanity after testing an experimental formula. He adopts the Green Goblin persona, using a goblin-themed costume, a glider, and pumpkin bombs. The name draws from the folklore goblin archetype\u2014a trickster who delights in chaos. The Green Goblin has appeared in multiple Spider-Man films: Willem Dafoe portrayed him in Sam Raimi's Spider-Man (2002) and later in Spider-Man: No Way Home (2021); James Franco played Harry Osborn as a version of the New Goblin in Spider-Man 3 (2007); and Dane DeHaan portrayed a younger Harry Osborn as the Green Goblin in The Amazing Spider-Man 2 (2014). The Hobgoblin, a successor villain introduced in the comics, carries on the goblin legacy. The 'goblin' branding in Marvel represents the chaotic, trickster, and sinister elements of the folklore origin, adapted into a high-tech supervillain concept.",
   "category": "pop_culture",
   "tags": "goblin,marvel,superhero,comic",
   "is_dynamic": false,
-  "date_added": "2026-05-09T17:32:51Z"
+  "date_added": "2026-05-09T17:32:51Z",
+  "references": [
+    "goblins-pop-culture-tropes",
+    "gremlins-goblin-comparison",
+    "labyrinth-goblin-king",
+    "goblins-harry-potter",
+    "goblin-tricks",
+    "goblin-lore"
+  ]
 }

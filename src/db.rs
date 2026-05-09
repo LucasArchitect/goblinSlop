@@ -10,6 +10,8 @@ pub struct ContentEntry {
     pub body_html: String,
     pub category: String,
     pub tags: String, // comma-separated
+    /// Comma-separated list of target slugs this article explicitly references (from JSON)
+    pub references: String,
     pub is_dynamic: bool,
 }
 
@@ -33,6 +35,7 @@ pub fn init_db(path: &str) -> SqlResult<Connection> {
             body_html TEXT NOT NULL,
             category TEXT NOT NULL DEFAULT 'general',
             tags TEXT NOT NULL DEFAULT '',
+            \"references\" TEXT NOT NULL DEFAULT '',
             is_dynamic INTEGER NOT NULL DEFAULT 0
         );
 
@@ -56,8 +59,8 @@ pub fn init_db(path: &str) -> SqlResult<Connection> {
 
 pub fn insert_content(conn: &Connection, entry: &ContentEntry) -> SqlResult<()> {
     conn.execute(
-        "INSERT OR REPLACE INTO content (slug, title, body_markdown, body_html, category, tags, is_dynamic)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT OR REPLACE INTO content (slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         rusqlite::params![
             entry.slug,
             entry.title,
@@ -65,6 +68,7 @@ pub fn insert_content(conn: &Connection, entry: &ContentEntry) -> SqlResult<()> 
             entry.body_html,
             entry.category,
             entry.tags,
+            entry.references,
             entry.is_dynamic as i32,
         ],
     )?;
@@ -73,7 +77,7 @@ pub fn insert_content(conn: &Connection, entry: &ContentEntry) -> SqlResult<()> 
 
 pub fn get_content_by_slug(conn: &Connection, slug: &str) -> SqlResult<Option<ContentEntry>> {
     let mut stmt = conn.prepare(
-        "SELECT id, slug, title, body_markdown, body_html, category, tags, is_dynamic
+        "SELECT id, slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic
          FROM content WHERE slug = ?1",
     )?;
 
@@ -86,7 +90,8 @@ pub fn get_content_by_slug(conn: &Connection, slug: &str) -> SqlResult<Option<Co
             body_html: row.get(4)?,
             category: row.get(5)?,
             tags: row.get(6)?,
-            is_dynamic: row.get::<_, i32>(7)? != 0,
+            references: row.get(7)?,
+            is_dynamic: row.get::<_, i32>(8)? != 0,
         })
     })?;
 
@@ -98,7 +103,7 @@ pub fn get_content_by_slug(conn: &Connection, slug: &str) -> SqlResult<Option<Co
 
 pub fn get_all_content(conn: &Connection) -> SqlResult<Vec<ContentEntry>> {
     let mut stmt = conn.prepare(
-        "SELECT id, slug, title, body_markdown, body_html, category, tags, is_dynamic
+        "SELECT id, slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic
          FROM content ORDER BY id",
     )?;
 
@@ -112,7 +117,8 @@ pub fn get_all_content(conn: &Connection) -> SqlResult<Vec<ContentEntry>> {
                 body_html: row.get(4)?,
                 category: row.get(5)?,
                 tags: row.get(6)?,
-                is_dynamic: row.get::<_, i32>(7)? != 0,
+                references: row.get(7)?,
+                is_dynamic: row.get::<_, i32>(8)? != 0,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -123,7 +129,7 @@ pub fn get_all_content(conn: &Connection) -> SqlResult<Vec<ContentEntry>> {
 pub fn search_content(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEntry>> {
     let pattern = format!("%{}%", query);
     let mut stmt = conn.prepare(
-        "SELECT id, slug, title, body_markdown, body_html, category, tags, is_dynamic
+        "SELECT id, slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic
          FROM content
          WHERE title LIKE ?1 OR body_markdown LIKE ?1 OR tags LIKE ?1
          ORDER BY id",
@@ -139,7 +145,8 @@ pub fn search_content(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEn
                 body_html: row.get(4)?,
                 category: row.get(5)?,
                 tags: row.get(6)?,
-                is_dynamic: row.get::<_, i32>(7)? != 0,
+                references: row.get(7)?,
+                is_dynamic: row.get::<_, i32>(8)? != 0,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;

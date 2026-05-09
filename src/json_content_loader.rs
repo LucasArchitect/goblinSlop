@@ -5,7 +5,7 @@ use std::fs;
 use std::path::Path;
 
 /// Unified content entry — loaded from individual JSON files in data/content/
-/// Schema: { id, title, slug, body_markdown, category, tags, is_dynamic, date_added }
+/// Schema: { id, title, slug, body_markdown, category, tags, references, is_dynamic, date_added }
 #[derive(Debug, Deserialize)]
 pub struct JsonContentEntry {
     pub id: String,
@@ -16,6 +16,9 @@ pub struct JsonContentEntry {
     pub category: String,
     #[serde(default)]
     pub tags: String,
+    /// Array of target slugs this article explicitly references
+    #[serde(default)]
+    pub references: Vec<String>,
     #[serde(default)]
     pub is_dynamic: bool,
     #[serde(default = "default_date_added")]
@@ -32,7 +35,7 @@ fn default_date_added() -> String {
 
 /// Loads all individual JSON content files from `data/content/` into the database.
 /// Each .json file is treated as one content unit with unified schema:
-/// { id, title, slug, body_markdown, category, tags, is_dynamic, date_added }
+/// { id, title, slug, body_markdown, category, tags, references, is_dynamic, date_added }
 pub fn load_all_content(
     db_path: &str,
     content_dir: &str,
@@ -70,6 +73,15 @@ pub fn load_all_content(
                 // Convert markdown → HTML
                 let body_html = markdown_to_html(&json_entry.body_markdown);
 
+                let tags = if json_entry.tags.is_empty() {
+                    "goblin".to_string()
+                } else {
+                    json_entry.tags.clone()
+                };
+
+                // Join references array into comma-separated string for DB storage
+                let references_str = json_entry.references.join(",");
+
                 let content_entry = ContentEntry {
                     id: 0,
                     slug: json_entry.slug.clone(),
@@ -77,18 +89,18 @@ pub fn load_all_content(
                     body_markdown: json_entry.body_markdown,
                     body_html,
                     category: json_entry.category.clone(),
-                    tags: if json_entry.tags.is_empty() {
-                        "goblin".to_string()
-                    } else {
-                        json_entry.tags.clone()
-                    },
+                    tags,
+                    references: references_str,
                     is_dynamic: json_entry.is_dynamic,
                 };
 
                 match insert_content(&conn, &content_entry) {
                     Ok(_) => println!(
-                        "  ✅ Loaded content: {} (slug: {}, date_added: {})",
-                        json_entry.title, json_entry.slug, json_entry.date_added
+                        "  ✅ Loaded content: {} (slug: {}, date_added: {}, refs: {} entries)",
+                        json_entry.title,
+                        json_entry.slug,
+                        json_entry.date_added,
+                        json_entry.references.len()
                     ),
                     Err(e) => eprintln!("  ❌ Failed to load '{}': {}", json_entry.id, e),
                 }

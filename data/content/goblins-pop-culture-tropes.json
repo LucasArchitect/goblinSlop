@@ -2,9 +2,17 @@
   "id": "goblins-pop-culture-tropes",
   "title": "TV Tropes - Goblins in Media",
   "slug": "goblins-pop-culture-tropes",
-  "body_markdown": "# TV Tropes - Goblins in Media\n\n> Source: [TV Tropes - Goblins in Media](https://tvtropes.org/pmwiki/pmwiki.php/Main/Goblin)\n\nGoblins are one of the most common fantasy races in modern media, appearing across literature, gaming, film, and animation. Common tropes associated with goblins include: (1) The Cannon Fodder Trope—goblins are typically the weakest monsters that beginner heroes practice on, appearing in large numbers; (2) The Goblin King—a stronger, often more intelligent leader who commands goblin hordes; (3) Mischievous Tricksters—goblins love pranks, theft, and general chaos, sometimes harmless, sometimes deadly; (4) Industrial Saboteurs—from the RAF's 'gremlin' folklore to Warhammer's goblin inventors, they're associated with machinery breakdowns; (5) Goblins vs. Dwarves—a classic fantasy rivalry going back to Norse mythology and Tolkien; (6) Subterranean Dwellers—goblins live in caves, mines, and underground tunnels; (7) Rapid Reproduction—goblins often reproduce quickly and in large numbers, explaining why they're so numerous; (8) The Unlikely Hero—modern works increasingly feature goblins as protagonists rather than mere enemies, especially in Japanese isekai where humans are reincarnated as goblins and rise to power. Notable works that define modern goblin tropes include J.R.R. Tolkien's The Hobbit, Dungeons & Dragons, Jim Henson's Labyrinth, the Goblin Slayer series, J.K. Rowling's Harry Potter, Terry Pratchett's Discworld (where goblins are a marginalized race seeking justice), and the Warcraft universe (where goblins are capitalist inventors).",
+  "body_markdown": "# TV Tropes - Goblins in Media\n\n> Source: [TV Tropes - Goblins in Media](https://tvtropes.org/pmwiki/pmwiki.php/Main/Goblin)\n\nGoblins are one of the most common fantasy races in modern media, appearing across literature, gaming, film, and animation. Common tropes associated with goblins include: (1) The Cannon Fodder Trope\u2014goblins are typically the weakest monsters that beginner heroes practice on, appearing in large numbers; (2) The Goblin King\u2014a stronger, often more intelligent leader who commands goblin hordes; (3) Mischievous Tricksters\u2014goblins love pranks, theft, and general chaos, sometimes harmless, sometimes deadly; (4) Industrial Saboteurs\u2014from the RAF's 'gremlin' folklore to Warhammer's goblin inventors, they're associated with machinery breakdowns; (5) Goblins vs. Dwarves\u2014a classic fantasy rivalry going back to Norse mythology and Tolkien; (6) Subterranean Dwellers\u2014goblins live in caves, mines, and underground tunnels; (7) Rapid Reproduction\u2014goblins often reproduce quickly and in large numbers, explaining why they're so numerous; (8) The Unlikely Hero\u2014modern works increasingly feature goblins as protagonists rather than mere enemies, especially in Japanese isekai where humans are reincarnated as goblins and rise to power. Notable works that define modern goblin tropes include J.R.R. Tolkien's The Hobbit, Dungeons & Dragons, Jim Henson's Labyrinth, the Goblin Slayer series, J.K. Rowling's Harry Potter, Terry Pratchett's Discworld (where goblins are a marginalized race seeking justice), and the Warcraft universe (where goblins are capitalist inventors).",
   "category": "pop_culture",
   "tags": "goblin,tropes,pop-culture,reference",
   "is_dynamic": false,
-  "date_added": "2026-05-09T17:32:51Z"
+  "date_added": "2026-05-09T17:32:51Z",
+  "references": [
+    "goblin-lore",
+    "goblin-tricks",
+    "labyrinth-goblin-king",
+    "goblins-harry-potter",
+    "the-hobbit-goblins",
+    "gremlins-goblin-comparison"
+  ]
 }
