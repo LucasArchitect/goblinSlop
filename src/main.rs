@@ -33,7 +33,7 @@ async fn main() {
     }
 
     // Build application state
-    let state = routes::AppState { db };
+    let state = routes::AppState { db, base_url: cfg.base_url.clone() };
 
     // Build router
     let app = routes::create_router(state)

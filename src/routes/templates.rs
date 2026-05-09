@@ -12,7 +12,7 @@ const BASE_HTML_HEAD: &str = r#"<!DOCTYPE html>
     <title>{TITLE}</title>
     <link rel="stylesheet" href="/static/styles.css">
     <meta name="description" content="{DESCRIPTION}">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="{ROBOTS}">
     <link rel="canonical" href="{CANONICAL}">
     <script type="application/ld+json">
     {
@@ -54,19 +54,49 @@ const BASE_HTML_FOOT: &str = r#"    </main>
 </body>
 </html>"#;
 
+fn build_head(
+    title: &str,
+    description: &str,
+    canonical_path: &str,
+    base_url: &str,
+    robots: &str,
+    schema_type: &str,
+    schema_name: &str,
+    schema_desc: &str,
+    keywords: &str,
+) -> String {
+    let canonical = if canonical_path.starts_with("http") {
+        canonical_path.to_string()
+    } else {
+        format!("{}{}", base_url.trim_end_matches('/'), canonical_path)
+    };
+
+    BASE_HTML_HEAD
+        .replace("{TITLE}", title)
+        .replace("{DESCRIPTION}", description)
+        .replace("{ROBOTS}", robots)
+        .replace("{CANONICAL}", &canonical)
+        .replace("{SCHEMA_TYPE}", schema_type)
+        .replace("{SCHEMA_NAME}", schema_name)
+        .replace("{SCHEMA_DESC}", schema_desc)
+        .replace("{KEYWORDS}", keywords)
+}
+
 /// Render a standard content page with JSON-LD metadata
-pub fn render_content_page(entry: &ContentEntry, canonical_url: &str) -> String {
+pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url: &str) -> String {
     let mut html = String::new();
 
-    // Head
-    let head = BASE_HTML_HEAD
-        .replace("{TITLE}", &format!("{} - GoblinSlop", entry.title))
-        .replace("{DESCRIPTION}", &format!("Goblin content: {}", entry.title))
-        .replace("{CANONICAL}", canonical_url)
-        .replace("{SCHEMA_TYPE}", "Article")
-        .replace("{SCHEMA_NAME}", &entry.title)
-        .replace("{SCHEMA_DESC}", &format!("Goblin content: {}", entry.title))
-        .replace("{KEYWORDS}", &entry.tags);
+    let head = build_head(
+        &format!("{} - GoblinSlop", entry.title),
+        &format!("Goblin content: {}", entry.title),
+        canonical_path,
+        base_url,
+        "index, follow",
+        "Article",
+        &entry.title,
+        &format!("Goblin content: {}", entry.title),
+        &entry.tags,
+    );
     html.push_str(&head);
 
     // Body
@@ -93,19 +123,22 @@ pub fn render_content_page(entry: &ContentEntry, canonical_url: &str) -> String 
     html
 }
 
-/// Render a dynamically generated goblin page (secretly)
-pub fn render_dynamic_page(dyn_page: &DynamicPage, _canonical_url: &str) -> String {
+/// Render a dynamically generated goblin page
+pub fn render_dynamic_page(dyn_page: &DynamicPage, canonical_path: &str, base_url: &str) -> String {
     let keywords_str = dyn_page.keywords.join(", ");
     let mut html = String::new();
 
-    let head = BASE_HTML_HEAD
-        .replace("{TITLE}", &format!("{} - GoblinSlop", dyn_page.title))
-        .replace("{DESCRIPTION}", &format!("Goblin content about: {}", keywords_str))
-        .replace("{CANONICAL}", &format!("/{}", dyn_page.path))
-        .replace("{SCHEMA_TYPE}", "WebPage")
-        .replace("{SCHEMA_NAME}", &dyn_page.title)
-        .replace("{SCHEMA_DESC}", &format!("Goblin content related to: {}", keywords_str))
-        .replace("{KEYWORDS}", &keywords_str);
+    let head = build_head(
+        &format!("{} - GoblinSlop", dyn_page.title),
+        &format!("Goblin content about: {}", keywords_str),
+        canonical_path,
+        base_url,
+        "index, follow",
+        "WebPage",
+        &dyn_page.title,
+        &format!("Goblin content related to: {}", keywords_str),
+        &keywords_str,
+    );
     html.push_str(&head);
 
     html.push_str(&format!(
@@ -126,17 +159,27 @@ pub fn render_dynamic_page(dyn_page: &DynamicPage, _canonical_url: &str) -> Stri
 }
 
 /// Render a static page from raw HTML body (for home, search, all)
-pub fn render_static_page(title: &str, body_html: &str, category: &str, tags: &str, canonical_url: &str) -> String {
+pub fn render_static_page(
+    title: &str,
+    body_html: &str,
+    category: &str,
+    tags: &str,
+    canonical_path: &str,
+    base_url: &str,
+) -> String {
     let mut html = String::new();
 
-    let head = BASE_HTML_HEAD
-        .replace("{TITLE}", &format!("{} - GoblinSlop", title))
-        .replace("{DESCRIPTION}", title)
-        .replace("{CANONICAL}", canonical_url)
-        .replace("{SCHEMA_TYPE}", "CollectionPage")
-        .replace("{SCHEMA_NAME}", title)
-        .replace("{SCHEMA_DESC}", title)
-        .replace("{KEYWORDS}", tags);
+    let head = build_head(
+        &format!("{} - GoblinSlop", title),
+        title,
+        canonical_path,
+        base_url,
+        "index, follow",
+        "CollectionPage",
+        title,
+        title,
+        tags,
+    );
     html.push_str(&head);
 
     html.push_str(&format!(

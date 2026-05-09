@@ -1,7 +1,7 @@
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
-    response::{Html, IntoResponse, Json},
+    response::{Html, IntoResponse, Json, Redirect},
 };
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +20,16 @@ pub struct ApiResponse<T: Serialize> {
     pub success: bool,
     pub data: T,
     pub source: String,
+}
+
+/// Normalize a slug: replace underscores with hyphens for canonical form
+fn normalize_slug(slug: &str) -> String {
+    slug.replace('_', "-")
+}
+
+/// Check if a slug is already in canonical (hyphen) form
+fn is_canonical(slug: &str) -> bool {
+    !slug.contains('_')
 }
 
 pub async fn home_page(State(state): State<AppState>) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -46,14 +56,49 @@ pub async fn home_page(State(state): State<AppState>) -> Result<impl IntoRespons
         list_html
     );
 
-    Ok(Html(render_static_page("GoblinSlop — A Library of Goblin Lore", &body, "home", "goblins,home,welcome", "/")))
+    Ok(Html(render_static_page("GoblinSlop — A Library of Goblin Lore", &body, "home", "goblins,home,welcome", "/", &state.base_url)))
+}
+
+pub async fn sitemap(
+    State(state): State<AppState>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let db = state.db.lock().unwrap();
+    let entries = db::get_all_content(&db).unwrap_or_default();
+    let base_url = state.base_url.trim_end_matches('/').to_string();
+
+    let mut urls = String::new();
+    urls.push_str(&format!(
+        r#"<url><loc>{}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>"#,
+        base_url
+    ));
+    urls.push_str(&format!(
+        r#"<url><loc>{}/search</loc><changefreq>weekly</changefreq><priority>0.5</priority></url>"#,
+        base_url
+    ));
+
+    for entry in &entries {
+        urls.push_str(&format!(
+            r#"<url><loc>{}/{}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>"#,
+            base_url, entry.slug
+        ));
+    }
+
+    let xml = format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{}
+</urlset>"#,
+        urls
+    );
+
+    Ok(([(axum::http::header::CONTENT_TYPE, "application/xml")], xml))
 }
 
 /// Fallback handler: any unknown path generates a dynamic goblin page
 pub async fn dynamic_fallback(
     State(state): State<AppState>,
     req: axum::http::Request<axum::body::Body>,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
+) -> Result<axum::response::Response, (StatusCode, String)> {
     let uri = req.uri().path_and_query()
         .map(|pq| pq.path().to_string())
         .unwrap_or_else(|| "/".to_string());
@@ -64,20 +109,23 @@ pub async fn dynamic_fallback(
         return Err((StatusCode::PERMANENT_REDIRECT, String::new()));
     }
 
+    // If slug contains underscore, redirect to canonical hyphen form
+    if !is_canonical(&slug) {
+        let canonical = normalize_slug(&slug);
+        return Ok(Redirect::permanent(&format!("/{}", canonical)).into_response());
+    }
+
     let db = state.db.lock().unwrap();
 
-    // Check static content (try original and underscore variants)
-    let slug_underscore = slug.replace('-', "_");
-    let entry = db::get_content_by_slug(&db, &slug)
-        .unwrap_or(None)
-        .or_else(|| db::get_content_by_slug(&db, &slug_underscore).unwrap_or(None));
+    // Check static content
+    let entry = db::get_content_by_slug(&db, &slug).unwrap_or(None);
     if let Some(entry) = entry {
-        return Ok(Html(render_content_page(&entry, &format!("/{}", slug))));
+        return Ok(Html(render_content_page(&entry, &format!("/{}", slug), &state.base_url)).into_response());
     }
 
     // Check cached dynamic
     if let Some(dyn_page) = db::get_dynamic_page(&db, &slug).unwrap_or(None) {
-        return Ok(Html(render_dynamic_page(&dyn_page, &format!("/{}", slug))));
+        return Ok(Html(render_dynamic_page(&dyn_page, &format!("/{}", slug), &state.base_url)).into_response());
     }
 
     // Generate new
@@ -91,7 +139,7 @@ pub async fn dynamic_fallback(
     let dyn_page = generate_dynamic_page_content(&slug, &final_keywords);
     let _ = db::insert_dynamic_page(&db, &dyn_page);
 
-    Ok(Html(render_dynamic_page(&dyn_page, &format!("/{}", slug))))
+    Ok(Html(render_dynamic_page(&dyn_page, &format!("/{}", slug), &state.base_url)).into_response())
 }
 
 pub async fn search_page(
@@ -123,7 +171,7 @@ pub async fn search_page(
         )
     };
 
-    Ok(Html(render_static_page("Search GoblinSlop", &body, "search", "search", "/search")))
+    Ok(Html(render_static_page("Search GoblinSlop", &body, "search", "search", "/search", &state.base_url)))
 }
 
 pub async fn raw_content(

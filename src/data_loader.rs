@@ -64,10 +64,13 @@ pub fn load_scraped_content(db_path: &str, data_dir: &str) -> Result<(), Box<dyn
 
         let body_html = markdown_to_html(&markdown);
 
+        // Make title unique by appending slug to distinguish entries with same source
+        let title = format!("{} ({})", entry.source, slug);
+
         let content_entry = ContentEntry {
             id: 0,
             slug: slug.clone(),
-            title: entry.source.clone(),
+            title,
             body_markdown: markdown,
             body_html,
             category,
