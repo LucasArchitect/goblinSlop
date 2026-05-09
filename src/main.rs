@@ -2,9 +2,8 @@ use std::sync::Arc;
 use tower_http::services::ServeDir;
 
 mod config;
-mod content;
-mod data_loader;
 mod db;
+mod json_content_loader;
 mod routes;
 
 #[tokio::main]
@@ -20,16 +19,10 @@ async fn main() {
     let conn = db::init_db(&cfg.db_path).expect("Failed to initialize database");
     let db = Arc::new(std::sync::Mutex::new(conn));
 
-    // Load static content into database
-    println!("Loading content from markdown files...");
-    if let Err(e) = content::load_content_from_dir(&cfg.db_path, &cfg.content_dir) {
+    // Load all unified JSON content into database (single source of truth)
+    println!("Loading content from unified JSON files...");
+    if let Err(e) = json_content_loader::load_all_content(&cfg.db_path, &cfg.content_dir) {
         eprintln!("Warning: Could not load all content: {}", e);
-    }
-
-    // Load scraped content into database
-    println!("Loading scraped content...");
-    if let Err(e) = data_loader::load_scraped_content(&cfg.db_path, &cfg.data_dir) {
-        eprintln!("Warning: Could not load scraped content: {}", e);
     }
 
     // Build application state
@@ -47,8 +40,10 @@ async fn main() {
 
     println!("🧌 GoblinSlop server running on http://{}", bind_addr);
     println!("📚 Content loaded. Browse to / for home page.");
-    println!("⚙️  Config: host={} port={} db={} content={} static={} data={}",
-        cfg.host, cfg.port, cfg.db_path, cfg.content_dir, cfg.static_dir, cfg.data_dir);
+    println!(
+        "⚙️  Config: host={} port={} db={} content_dir={} static={}",
+        cfg.host, cfg.port, cfg.db_path, cfg.content_dir, cfg.static_dir
+    );
 
     axum::serve(listener, app)
         .await
