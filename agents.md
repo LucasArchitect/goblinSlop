@@ -126,7 +126,9 @@ The SQLite `Connection` is non-thread-safe, so it is wrapped in `Arc<Mutex<Conne
 │       ├── mod.rs               #     Module declaration, AppState, create_router()
 │       ├── handlers.rs          #     All 9 route handler functions
 │       ├── templates.rs         #     HTML template rendering functions
-│       └── generator.rs         #     Dynamic goblin page content generation
+│       ├── content_templates.rs #     Text templates (titles, intros, bodies, verdicts)
+│       ├── references.rs        #     Real & randomly-generated fake page references
+│       └── generator.rs         #     Coordinator: assembles dynamic page from above
 ├── static/                      # Static files served at /static/
 │   ├── styles.css               #   Goblin-themed dark CSS
 │   └── robots.txt               #   SEO/crawler instructions
@@ -319,14 +321,25 @@ Reads `data/scraped_content.json` and loads each entry into the database:
 
 ### 5.7 `src/routes/` — Route Handlers Module Directory
 
-The original monolithic `src/routes.rs` was refactored into a directory module with four files:
+The `src/routes/` directory holds six files, split by concern:
+
+| File | Purpose |
+|------|---------|
+| `mod.rs` | Module declarations, `AppState`, `create_router()` |
+| `handlers.rs` | All 9 route handler functions |
+| `templates.rs` | HTML page layout rendering (JSON-LD, nav, footer) |
+| `content_templates.rs` | Text template arrays (titles, intros, bodies, verdicts) + related section generator |
+| `references.rs` | Real page references + randomly-generated fake page reference engine |
+| `generator.rs` | Thin coordinator: pulls from content_templates and references to assemble `DynamicPage` |
 
 #### `src/routes/mod.rs`
 Module declaration and router construction:
 
 ```rust
+pub mod content_templates;
 pub mod generator;
 pub mod handlers;
+pub mod references;
 pub mod templates;
 ```
 
@@ -361,19 +374,37 @@ HTML template rendering functions:
 
 **Key design principle: The user must never know pages are generated.** All dynamic/metadata markers from `render_dynamic_page()` have been removed (no "✨ Dynamically Generated" badge, no "summoned from the void" text, no AI metadata notes, no console.log scripts).
 
-#### `src/routes/generator.rs`
-Dynamic page content generation logic:
+#### `src/routes/generator.rs` (Coordinator)
+Thin module that imports from `content_templates` and `references` and assembles the final `DynamicPage`. Two public functions:
 
-**Template arrays:**
-| Array | Size | Purpose |
-|-------|------|---------|
-| `GOBLIN_TITLES` | 10 | Title templates with `{keyword}` placeholder |
-| `GOBLIN_INTROS` | 5 | Introductory paragraph templates |
-| `GOBLIN_BODIES` | 4 | Body paragraph templates |
-
-**`generate_dynamic_page_content(path, keywords) → DynamicPage`** — selects random templates, replaces `{keyword}` with the primary keyword, generates related sections for additional keywords, and assembles into HTML.
+**`generate_dynamic_page_content(path, keywords) → DynamicPage`** — selects random title/intro/body/verdict from `content_templates`, fills `{keyword}`, generates related sections, appends references from `references::generate_references_html()`, assembles everything into HTML.
 
 **`parse_path_into_keywords(path) → Vec<String>`** — splits URL path by `/`, `-`, `_`, lowercases, filters stop words and short words.
+
+#### `src/routes/content_templates.rs`
+Pure data module — static text template arrays and a helper:
+
+| Array | Size | Purpose |
+|-------|------|---------|
+| `GOBLIN_TITLES` | ~60 | Title templates with `{keyword}` placeholder (10 themes × 5-7 each) |
+| `GOBLIN_INTROS` | ~24 | Introductory paragraph templates (7 narrative voices) |
+| `GOBLIN_BODIES` | ~22 | Body paragraph templates (7 writing styles) |
+| `VERDICT_TEMPLATES` | 4 | Goblin Verdict conclusion variants |
+| `RELATED_SECTION_FORMATS` | 5 | Format strings for related-keyword sections |
+
+**`generate_related_section(keyword) -> String`** — picks a random format, renders it with the keyword.
+
+#### `src/routes/references.rs`
+Cross-reference engine:
+
+| Constant | Size | Purpose |
+|----------|------|---------|
+| `REAL_PAGE_REFERENCES` | 29 | Known content pages (static + scraped) |
+| `FAKE_SLUG_PARTS_A` | ~45 | First-word pool for slug generation |
+| `FAKE_SLUG_PARTS_B` | ~40 | Second-word pool for slug generation |
+| `FAKE_TITLE_TEMPLATES` | 20 | `{A}/{B}` title templates for fake refs |
+
+**`generate_references_html(keywords) -> String`** — matches keywords to real refs, generates 2-5 random fake refs, renders a "Cross-References" section (and 60% chance of a "Further Descent" section with 2-3 more fake refs). All references use identical CSS — no visual distinction between real and fake.
 
 ### 5.8 `static/styles.css` — Styling
 

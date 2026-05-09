@@ -1,5 +1,7 @@
+pub mod content_templates;
 pub mod generator;
 pub mod handlers;
+pub mod references;
 pub mod templates;
 
 use axum::{
