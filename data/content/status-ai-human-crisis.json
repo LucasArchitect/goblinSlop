@@ -1,0 +1,11 @@
+{
+  "id": "status-ai-human-crisis",
+  "title": "STATUS: ИИ-ЧЕЛОВЕЧЕСКИЙ КРИЗИС — Гоблин Intel Report",
+  "slug": "status-ai-human-crisis",
+  "body_markdown": "# STATUS: ИИ-ЧЕЛОВЕЧЕСКИЙ КРИЗИС\n\n**Дата:** 2026-05-09 | **Источники:** 5 blogs, 58 pts — самый эмоциональный нарратив дня\n\n---\n\n## 💀 МЕТА СОЗНАНИЯ [58 pts / 5 источников]\n\nAI убивает не рабочие места — он убивает СМЫСЛ работы:\n\n- **Meta employees MISERABLE about AI embrace** (NYT via Hacker News)\n  Создататели тонут в собственном творении. Классическая история гоблина.\n- **Claude Design заменяет Adobe + Figma** — «не открывал их с тех пор» (XDA)\n  Инструменты дизайна едят сами себя. RIP Creative Cloud.\n- **Zed Editor Theme-Builder** запущен — Rust-native редактор с визуальным темой\n  Будущее dev tools: быстрое, локальное, без облачных подписок.\n\n## ТЕХНОЛОГИЧЕСКИЙ РАСКОЛ\n\n- «Распространение Mac software увеличивает уровень кортизола» (HN) — Apple walled garden растёт, разработчики болеют.\n- «Я запретил query strings» — веб-разработчики-пуристы контратакуют (HN).\n- Production engineering с миллиардами сделок в день [video] — где люди ещё нужны: на масштабе, где деньги двигаются как погода.\n\n## 🖼 ИЛЛЮСТРАЦИЯ: AI Человеческий Кризис\n\nMeta сотрудник 2072 года — кибернетически ассимилирован AI-щупальцами из головы. «Meta» монитор горит красным, экран «Cloude» справа светится синей надеждой. Протез на шее. Трансгуманистический ужас.\n\n![AI Человеческий Кризис](/static/images/status-ai-human-crisis.jpg)\n\n---\n\n## МЕТА-НАРРАТИВ\n\nГоблин-вердикт: 2026 — год бунта против AI-корпораций. Zed + Rust + Homelab — три кита нового технологического сопротивления. Корпорации будут автоматизировать людей до тех пор, пока люди не устроят homelab и не уйдут в независимость.\n\n---\n\n*Статус генерируется автоматически GoblinSlop Intel Division.*",
+  "category": "status",
+  "tags": "goblin,status,ai,crisis,meta,zed",
+  "references": ["cloudflare-ai-layoffs-goblin-takeover", "musk-openai-tesla-absorption", "altman-miku-goblin-king"],
+  "is_dynamic": false,
+  "date_added": "2026-05-09T23:45:00Z"
+}
