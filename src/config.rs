@@ -20,7 +20,6 @@ pub struct Config {
     pub db_path: String,
     pub content_dir: String,
     pub static_dir: String,
-    pub data_dir: String,
     pub base_url: String,
 }
 
@@ -34,9 +33,8 @@ impl Config {
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(3000),
             db_path: env::var("GOBLIN_DB_PATH").unwrap_or_else(|_| "goblin_slop.db".to_string()),
-            content_dir: env::var("GOBLIN_CONTENT_DIR").unwrap_or_else(|_| "content".to_string()),
+            content_dir: env::var("GOBLIN_CONTENT_DIR").unwrap_or_else(|_| "data/content".to_string()),
             static_dir: env::var("GOBLIN_STATIC_DIR").unwrap_or_else(|_| "static".to_string()),
-            data_dir: env::var("GOBLIN_DATA_DIR").unwrap_or_else(|_| "data".to_string()),
             base_url: env::var("GOBLIN_BASE_URL").unwrap_or_else(|_| "http://goblin.geno.su".to_string()),
         }
     }
