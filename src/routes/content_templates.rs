@@ -148,32 +148,34 @@ pub const VERDICT_TEMPLATES: &[&str] = &[
     "The goblin verdict on {} is unanimous, which is remarkable given that goblins cannot agree on anything except the deliciousness of stolen food. {} has been classified as 'Real Enough to Matter in Ways We Don't Fully Understand,' which is the highest classification a goblin concept can receive.",
 ];
 
-// ── Related section formats ─────────────────────────────────
-pub const RELATED_SECTION_FORMATS: &[&str] = &[
-    "section h2 Goblins and {} /h2 p The connection between goblins and {} is undeniable. Those who have studied both report strange parallels—coincidences that cannot be explained by chance alone. Some say that {} is simply a modern expression of ancient goblin trickery. /p /section",
-    "section h2 The {} Manifestation /h2 p {} appears in goblin lore under many names, but the essence is always the same: a phenomenon that exists at the threshold of perception. Goblins have built entire rituals around observing {} in its natural environment—which is to say, slightly out of view. /p /section",
-    "section h2 {} Through Goblin Eyes /h2 p To a goblin, {} is not a concept but a presence. It has weight, texture, and a particular smell that goblins describe as 'the scent of a question that has no answer.' Those who have spent time around goblins report that thinking about {} feels different from thinking about ordinary things. /p /section",
-    "section h2 The Goblin Council on {} /h2 p After much deliberation (and several stolen snacks), the Goblin Council has issued a formal statement on {}: 'It is what it is, except when it isn't, which is most of the time.' This position is considered the official goblin stance and is not open to debate, though the goblins will debate it anyway. /p /section",
-    "section h2 {} and the Schizo-Goblin Continuum /h2 p {} occupies a specific point on the Schizo-Goblin-Post-Truth-AI-Slop-Miku Continuum, a fact that has been confirmed by at least three independent researchers and an unspecified number of goblins. The continuum suggests that {} is not an isolated phenomenon but part of a larger pattern of collective perception. /p /section",
+// ── Related section headings ────────────────────────────────
+const RELATED_SECTION_TITLES: &[&str] = &[
+    "Goblins and {kw}",
+    "The {kw} Manifestation",
+    "{kw} Through Goblin Eyes",
+    "The Goblin Council on {kw}",
+    "{kw} and the Schizo-Goblin Continuum",
 ];
 
-// ── Generate a related section for a keyword using a random format ───
+// ── Related section body paragraphs (each keyword replaced independently) ───
+const RELATED_SECTION_BODIES: &[&str] = &[
+    "The connection between goblins and {kw} is undeniable. Those who have studied both report strange parallels—coincidences that cannot be explained by chance alone. Some say that {kw} is simply a modern expression of ancient goblin trickery.",
+    "{kw} appears in goblin lore under many names, but the essence is always the same: a phenomenon that exists at the threshold of perception. Goblins have built entire rituals around observing {kw} in its natural environment—which is to say, slightly out of view.",
+    "To a goblin, {kw} is not a concept but a presence. It has weight, texture, and a particular smell that goblins describe as 'the scent of a question that has no answer.' Those who have spent time around goblins report that thinking about {kw} feels different from thinking about ordinary things.",
+    "After much deliberation (and several stolen snacks), the Goblin Council has issued a formal statement on {kw}: 'It is what it is, except when it isn't, which is most of the time.' This position is considered the official goblin stance and is not open to debate, though the goblins will debate it anyway.",
+    "{kw} occupies a specific point on the Schizo-Goblin-Post-Truth-AI-Slop-Miku Continuum, a fact that has been confirmed by at least three independent researchers and an unspecified number of goblins. The continuum suggests that {kw} is not an isolated phenomenon but part of a larger pattern of collective perception.",
+];
+
+/// Generate a related section for a keyword — returns clean raw HTML (no markdown processing).
 pub fn generate_related_section(keyword: &str) -> String {
-    use rand::seq::SliceRandom;
+    use rand::{seq::SliceRandom, Rng};
 
-    let format = RELATED_SECTION_FORMATS
-        .choose(&mut rand::thread_rng())
-        .unwrap_or(&RELATED_SECTION_FORMATS[0]);
+    let idx = rand::thread_rng().gen_range(0..RELATED_SECTION_TITLES.len());
+    let title = RELATED_SECTION_TITLES[idx].replace("{kw}", keyword);
+    let body = RELATED_SECTION_BODIES[idx].replace("{kw}", keyword);
 
-    let mut result = format
-        .replace("{}", keyword);
-
-    result = result.replace("section ", "<section class='dynamic-section'>");
-    result = result.replace(" /section", "</section>");
-    result = result.replace("h2 ", "<h2>");
-    result = result.replace(" /h2", "</h2>");
-    result = result.replace("p ", "<p>");
-    result = result.replace(" /p", "</p>");
-
-    result
+    format!(
+        "<section class=\"dynamic-section\">\n      <h2>{}</h2>\n      <p>{}</p>\n    </section>",
+        title, body
+    )
 }

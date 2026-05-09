@@ -37,7 +37,8 @@ mkdir -p "$DEPLOY_DIR"
 
 cp target/release/goblin_slop "$DEPLOY_DIR/"
 cp -r static "$DEPLOY_DIR/"
-cp -r content "$DEPLOY_DIR/"
+# content/ directory removed — all content migrated to data/content/*.json
+if [ -d "content" ]; then cp -r content "$DEPLOY_DIR/"; fi
 cp -r data "$DEPLOY_DIR/"
 sed "s/__APP_USER__/${APP_USER}/g" deploy/goblinSlop.service > "$DEPLOY_DIR/goblinSlop.service"
 

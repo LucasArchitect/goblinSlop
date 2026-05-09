@@ -5,172 +5,244 @@
 }
 
 body {
-    font-family: 'Georgia', 'Times New Roman', serif;
-    background-color: #1a1a2e;
-    color: #e0e0e0;
-    line-height: 1.6;
+    font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    background-color: #111122;
+    background-image: radial-gradient(ellipse at 50% 0%, #1a1a3e 0%, #111122 70%);
+    color: #d4d0c8;
+    line-height: 1.75;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-/* Navigation */
+/* ── Navigation ─────────────────────────────────────── */
 .goblin-nav {
-    background: linear-gradient(135deg, #16213e 0%, #0f3460 50%, #1a1a2e 100%);
-    border-bottom: 3px solid #e94560;
-    padding: 0.8rem 1rem;
+    background: linear-gradient(180deg, #0d0d20 0%, #151530 100%);
+    border-bottom: 1px solid #2a2a50;
+    padding: 0.7rem 1rem;
     position: sticky;
     top: 0;
     z-index: 100;
 }
 
 .nav-inner {
-    max-width: 1000px;
+    max-width: 960px;
     margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.6rem;
 }
 
 .nav-logo {
-    font-size: 1.5rem;
+    font-size: 1.45rem;
     font-weight: bold;
-    color: #e94560;
+    color: #c8a87a;
     text-decoration: none;
-    text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+    letter-spacing: 0.02em;
 }
 
 .nav-links {
     display: flex;
-    gap: 0.8rem;
+    gap: 0.3rem;
     flex-wrap: wrap;
 }
 
 .nav-links a {
-    color: #a0a0c0;
+    color: #8a8aa8;
     text-decoration: none;
-    font-size: 0.9rem;
-    padding: 0.3rem 0.6rem;
-    border-radius: 4px;
-    transition: all 0.2s;
+    font-size: 0.88rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
 }
 
 .nav-links a:hover {
-    background: rgba(233, 69, 96, 0.2);
-    color: #e94560;
+    background: rgba(200, 168, 122, 0.1);
+    color: #c8a87a;
 }
 
-/* Main content */
+/* ── Main content ───────────────────────────────────── */
 .content-wrapper {
-    max-width: 800px;
+    max-width: 820px;
     margin: 2rem auto;
     padding: 0 1.5rem;
     flex: 1;
 }
 
 .content-page {
-    background: #16213e;
-    border: 1px solid #0f3460;
-    border-radius: 8px;
-    padding: 2rem;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    background: #161630;
+    border: 1px solid #2a2a50;
+    border-radius: 12px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4), 0 0 80px rgba(30, 30, 70, 0.15);
 }
 
 .page-header {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #0f3460;
+    margin-bottom: 2rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid #2a2a50;
 }
 
 .page-header h1 {
-    color: #e94560;
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+    color: #c8a87a;
+    font-size: 2.1rem;
+    margin-bottom: 0.6rem;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
 }
 
 .meta {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
-    font-size: 0.85rem;
-    color: #888;
+    font-size: 0.82rem;
+    color: #6a6a88;
 }
 
 .category, .tags {
-    background: #0f3460;
-    padding: 0.2rem 0.6rem;
+    background: rgba(42, 42, 80, 0.5);
+    padding: 0.15rem 0.6rem;
     border-radius: 4px;
+    color: #8a8aa8;
 }
 
 .dynamic-badge {
-    background: #e94560;
-    color: #fff;
-    padding: 0.2rem 0.6rem;
+    background: rgba(200, 168, 122, 0.15);
+    color: #c8a87a;
+    padding: 0.15rem 0.6rem;
     border-radius: 4px;
     font-weight: bold;
+    font-size: 0.82rem;
 }
 
 .path-display {
-    color: #888;
+    color: #6a6a88;
     font-family: monospace;
 }
 
-/* Page body content */
-.page-body h1 { color: #e94560; font-size: 1.8rem; margin: 1.5rem 0 0.5rem; }
-.page-body h2 { color: #e94560; font-size: 1.4rem; margin: 1.2rem 0 0.5rem; }
-.page-body h3 { color: #a0a0c0; font-size: 1.1rem; margin: 1rem 0 0.5rem; }
-.page-body p { margin: 0.8rem 0; }
-.page-body ul, .page-body ol { margin: 0.8rem 0 0.8rem 2rem; }
-.page-body li { margin: 0.4rem 0; }
-.page-body strong { color: #ffd700; }
-.page-body em { color: #a0a0c0; }
-.page-body a { color: #4fc3f7; text-decoration: underline; }
-.page-body a:hover { color: #e94560; }
-.page-body hr { border: none; border-top: 1px solid #0f3460; margin: 1.5rem 0; }
-.page-body code {
-    background: #0f3460;
-    padding: 0.1rem 0.3rem;
-    border-radius: 3px;
-    font-size: 0.9em;
+/* ── Page body content ──────────────────────────────── */
+.page-body h1 {
+    color: #bfa070;
+    font-size: 1.7rem;
+    margin: 2rem 0 0.8rem;
+    line-height: 1.35;
 }
 
-/* Hero section */
+.page-body h2 {
+    color: #a89060;
+    font-size: 1.35rem;
+    margin: 1.8rem 0 0.7rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid #2a2a50;
+    line-height: 1.35;
+}
+
+.page-body h3 {
+    color: #9890a8;
+    font-size: 1.1rem;
+    margin: 1.2rem 0 0.5rem;
+    font-weight: normal;
+    letter-spacing: 0.02em;
+}
+
+.page-body p {
+    margin: 0.9rem 0;
+    color: #c4c0b8;
+    text-align: justify;
+    hyphens: auto;
+}
+
+.page-body ul, .page-body ol {
+    margin: 0.8rem 0 0.8rem 2rem;
+}
+
+.page-body li {
+    margin: 0.35rem 0;
+    color: #c4c0b8;
+}
+
+.page-body strong {
+    color: #d4c8a0;
+    font-weight: 600;
+}
+
+.page-body em {
+    color: #9a92b0;
+    font-style: italic;
+}
+
+.page-body a {
+    color: #7eb8d0;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(126, 184, 208, 0.3);
+    transition: all 0.2s ease;
+}
+
+.page-body a:hover {
+    color: #a8d8f0;
+    border-bottom-color: #a8d8f0;
+}
+
+.page-body hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #2a2a50 30%, #2a2a50 70%, transparent);
+    margin: 2rem 0;
+}
+
+.page-body code {
+    background: rgba(42, 42, 80, 0.6);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: #a0a0c0;
+}
+
+/* ── Hero section ───────────────────────────────────── */
 .hero {
     margin-bottom: 2rem;
 }
 
 .hero h2 {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     margin-bottom: 1rem;
 }
 
-/* Dynamic page specific */
+/* ── Dynamic sections (the former "red text" blocks) ── */
+.dynamic-section {
+    margin: 1.8rem 0;
+    padding: 1.2rem 1.5rem;
+    border-left: 3px solid #4a3860;
+    background: rgba(20, 20, 50, 0.5);
+    border-radius: 0 10px 10px 0;
+}
+
+.dynamic-section h2 {
+    color: #b8a0d0;
+    font-size: 1.25rem;
+    margin: 0 0 0.6rem;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
 .goblin-summon {
-    background: linear-gradient(135deg, #0f3460, #1a1a2e);
-    border: 1px solid #e94560;
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 1rem 0;
+    background: linear-gradient(135deg, rgba(30, 30, 60, 0.6), rgba(20, 20, 40, 0.8));
+    border: 1px solid #2a2a50;
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin: 1.5rem 0;
     text-align: center;
 }
 
 .goblin-summon-footer {
     margin-top: 2rem;
     text-align: center;
-    color: #888;
+    color: #6a6a88;
 }
 
-.dynamic-section {
-    margin: 1.5rem 0;
-    padding: 1rem;
-    border-left: 3px solid #e94560;
-    background: rgba(15, 52, 96, 0.3);
-    border-radius: 0 8px 8px 0;
-}
-
-/* Search form */
+/* ── Search form ────────────────────────────────────── */
 .search-form {
     display: flex;
     gap: 0.5rem;
@@ -180,91 +252,89 @@ body {
 .search-form input {
     flex: 1;
     padding: 0.6rem 1rem;
-    border: 2px solid #0f3460;
-    border-radius: 4px;
-    background: #1a1a2e;
-    color: #e0e0e0;
+    border: 1px solid #2a2a50;
+    border-radius: 8px;
+    background: rgba(17, 17, 34, 0.8);
+    color: #d4d0c8;
     font-size: 1rem;
+    font-family: inherit;
 }
 
 .search-form input:focus {
     outline: none;
-    border-color: #e94560;
+    border-color: #c8a87a;
+    box-shadow: 0 0 0 2px rgba(200, 168, 122, 0.15);
 }
 
 .search-form button {
-    padding: 0.6rem 1.2rem;
-    background: #e94560;
-    color: white;
+    padding: 0.6rem 1.4rem;
+    background: #c8a87a;
+    color: #111122;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
 }
 
 .search-form button:hover {
-    background: #d63851;
+    background: #d4b88a;
 }
 
-/* Content list */
+/* ── Content list ───────────────────────────────────── */
 .content-list {
     list-style: none;
     padding: 0;
 }
 
 .content-list li {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #0f3460;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #2a2a50;
 }
 
 .content-list a {
-    color: #4fc3f7;
+    color: #7eb8d0;
     text-decoration: none;
 }
 
 .content-list a:hover {
-    color: #e94560;
+    color: #a8d8f0;
+    text-decoration: underline;
 }
 
 .category-badge {
-    background: #0f3460;
+    background: rgba(42, 42, 80, 0.5);
     padding: 0.1rem 0.5rem;
     border-radius: 4px;
     font-size: 0.8rem;
-    color: #888;
+    color: #6a6a88;
 }
 
-/* AI metadata */
+/* ── AI metadata ────────────────────────────────────── */
 .ai-metadata {
     margin-top: 2rem;
     padding-top: 1rem;
 }
 
 .ai-note {
-    font-size: 0.85rem;
-    color: #666;
+    font-size: 0.82rem;
+    color: #5a5a78;
     font-style: italic;
 }
 
-.ai-note code {
-    background: #0f3460;
-    padding: 0.1rem 0.3rem;
-    border-radius: 3px;
-    font-size: 0.9em;
-}
-
-/* References sections */
+/* ── References sections ────────────────────────────── */
 .references-section {
-    margin: 1.5rem 0;
-    padding: 1rem;
-    border-left: 3px solid #0f3460;
-    background: rgba(15, 52, 96, 0.2);
-    border-radius: 0 8px 8px 0;
+    margin: 1.8rem 0;
+    padding: 1.2rem 1.5rem;
+    border-left: 3px solid #2a2a50;
+    background: rgba(20, 20, 50, 0.4);
+    border-radius: 0 10px 10px 0;
 }
 
 .references-section h2 {
-    color: #e94560;
-    font-size: 1.2rem;
+    color: #9890a8;
+    font-size: 1.1rem;
     margin-bottom: 0.8rem;
 }
 
@@ -275,7 +345,7 @@ body {
 
 .reference-list li {
     padding: 0.3rem 0;
-    border-bottom: 1px solid rgba(15, 52, 96, 0.5);
+    border-bottom: 1px solid rgba(42, 42, 80, 0.5);
 }
 
 .reference-list li:last-child {
@@ -283,28 +353,35 @@ body {
 }
 
 .reference-real a {
-    color: #4fc3f7;
+    color: #7eb8d0;
     text-decoration: none;
     font-size: 0.9rem;
 }
 
 .reference-real a:hover {
-    color: #e94560;
+    color: #a8d8f0;
 }
 
-/* Footer */
+/* ── Footer ─────────────────────────────────────────── */
 .goblin-footer {
     text-align: center;
     padding: 1.5rem;
-    background: #16213e;
-    border-top: 2px solid #0f3460;
-    color: #666;
-    font-size: 0.85rem;
+    background: rgba(20, 20, 40, 0.5);
+    border-top: 1px solid #2a2a50;
+    color: #5a5a78;
+    font-size: 0.82rem;
     margin-top: auto;
 }
 
 .footer-note {
-    color: #444;
+    color: #4a4a68;
     font-style: italic;
     margin-top: 0.5rem;
+}
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 600px) {
+    .content-page { padding: 1.5rem; }
+    .page-header h1 { font-size: 1.6rem; }
+    .nav-inner { justify-content: center; }
 }
