@@ -41,7 +41,6 @@ const BASE_HTML_HEAD: &str = r#"<!DOCTYPE html>
                 <a href="/sam-altman-goblins">Sam Altman</a>
                 <a href="/goblin-schizophrenia">Schizophrenia</a>
                 <a href="/search">Search</a>
-                <a href="/all">All Pages</a>
             </div>
         </div>
     </nav>

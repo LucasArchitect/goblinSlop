@@ -126,22 +126,6 @@ pub async fn search_page(
     Ok(Html(render_static_page("Search GoblinSlop", &body, "search", "search", "/search")))
 }
 
-pub async fn all_pages(State(state): State<AppState>) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let db = state.db.lock().unwrap();
-    let entries = db::get_all_content(&db).unwrap_or_default();
-
-    let mut list_html = String::from("<ul class='content-list'>");
-    for entry in &entries {
-        list_html.push_str(&format!(
-            "<li><a href='/{}'><strong>{}</strong></a> <span class='category-badge'>{}</span></li>",
-            entry.slug, entry.title, entry.category
-        ));
-    }
-    list_html.push_str("</ul>");
-
-    Ok(Html(render_static_page("All Goblin Pages", &list_html, "navigation", "all,pages,index", "/all")))
-}
-
 pub async fn raw_content(
     State(state): State<AppState>,
     Path(slug): Path<String>,

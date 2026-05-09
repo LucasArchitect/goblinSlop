@@ -345,7 +345,7 @@ pub mod templates;
 
 - Declares `AppState` struct
 - `create_router(state: AppState) -> Router` — builds a two-layer router:
-  1. **Inner router** (exact routes): `/`, `/search`, `/all`, `/raw/:slug`, `/api/content/:slug`, `/api/dynamic/*path`, `/api/search`, `/api/all`
+  1. **Inner router** (exact routes): `/`, `/search`, `/raw/:slug`, `/api/content/:slug`, `/api/dynamic/*path`, `/api/search`, `/api/all`
   2. **Outer router** (fallback): Any path that doesn't match the inner router gets handled by `dynamic_fallback`
 
 #### `src/routes/handlers.rs`
@@ -356,7 +356,6 @@ All 9 route handler functions:
 | `home_page` | `GET /` | Query all content, build list HTML, render as static page |
 | `dynamic_fallback` | `GET /*` | Extract path from URI, check static by slug+underscore, check cached dynamic, or generate new |
 | `search_page` | `GET /search?q=` | If q present: search DB, show results. If not: show search form |
-| `all_pages` | `GET /all` | List all static content entries |
 | `raw_content` | `GET /raw/:slug` | Return raw Markdown body as text/plain |
 | `api_content` | `GET /api/content/:slug` | Return single ContentEntry as JSON |
 | `api_dynamic` | `GET /api/dynamic/*path` | Return DynamicPage as JSON (generate if needed) |
@@ -464,7 +463,6 @@ Full crawl allowed.
 |----------|--------|-------------|----------|
 | `/` | GET | Home page with content listing | HTML 200 |
 | `/search?q=...` | GET | Full-text search results | HTML 200 |
-| `/all` | GET | List all static + scraped pages | HTML 200 |
 | `/raw/:slug` | GET | Raw Markdown source | text/plain 200 |
 | `/*` | GET | Any path → goblin page (seamless, no "generated" indicators) | HTML 200 |
 

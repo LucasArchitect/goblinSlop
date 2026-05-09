@@ -11,7 +11,7 @@ use axum::{
 use std::sync::Arc;
 
 use handlers::{
-    all_pages, api_all, api_content, api_dynamic, api_search,
+    api_all, api_content, api_dynamic, api_search,
     dynamic_fallback, home_page, raw_content, search_page,
 };
 
@@ -24,7 +24,6 @@ pub fn create_router(state: AppState) -> Router {
     let app = Router::new()
         .route("/", get(home_page))
         .route("/search", get(search_page))
-        .route("/all", get(all_pages))
         .route("/raw/:slug", get(raw_content))
         .route("/api/content/:slug", get(api_content))
         .route("/api/dynamic/*path", get(api_dynamic))
