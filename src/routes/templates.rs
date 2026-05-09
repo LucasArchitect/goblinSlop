@@ -1,4 +1,5 @@
 use crate::db::{ContentEntry, DynamicPage};
+use super::references::generate_references_html;
 
 // ============================================================
 // HTML Template Constants
@@ -118,6 +119,16 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
         tags = entry.tags,
         body = entry.body_html,
     ));
+
+    // Cross-references — real + random generated links in one unified block
+    let refs_keywords: Vec<String> = entry
+        .tags
+        .split(',')
+        .map(|t| t.trim().to_string())
+        .chain(std::iter::once(entry.slug.split('-').map(|s| s.to_string()).collect::<Vec<_>>().join(" ")))
+        .filter(|t| !t.is_empty())
+        .collect();
+    html.push_str(&generate_references_html(&refs_keywords));
 
     html.push_str(BASE_HTML_FOOT);
     html

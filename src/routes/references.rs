@@ -100,16 +100,8 @@ const REFERENCE_SECTION_TEMPLATES: &[&str] = &[
     "For Further Descent",
 ];
 
-// ── Descent intro templates ─────────────────────────────────
-const FURTHER_DESCENT_TEMPLATES: &[&str] = &[
-    "The following documents wait in the deep goblin archives.",
-    "For those who wish to descend deeper, the archives hold more.",
-    "Secret texts said to exist in the deep goblin tunnels.",
-    "Documents that may or may not exist, depending on the goblins.",
-    "The following paths lead deeper into the goblin tunnels.",
-    "Whispered about in certain forums, these texts call to those who have already seen too much.",
-    "The goblin libraries contain additional works for the prepared.",
-];
+// ── Descent intro templates (kept for reference, no longer used) ────────────────
+const _FURTHER_DESCENT_TEMPLATES: &[&str] = &[];
 
 // ── Generate a random fake page reference ───────────────────
 fn generate_random_fake_ref() -> (String, String, String) {
@@ -203,29 +195,6 @@ pub fn generate_references_html(keywords: &[String]) -> String {
     }
 
     html.push_str("</ul>\n</section>\n");
-
-    if rand::random::<f64>() < 0.6 {
-        let descent_intro = FURTHER_DESCENT_TEMPLATES
-            .choose(&mut rand::thread_rng())
-            .unwrap_or(&"The deep goblin archives hold more.");
-
-        html.push_str(&format!(
-            "<section class='references-section'>\n<h2>Further Descent</h2>\n<p>{}</p>\n<ul class='reference-list'>\n",
-            descent_intro
-        ));
-
-        let extra_count = rand::thread_rng().gen_range(2..=3);
-        for _ in 0..extra_count {
-            let (slug, title, _tag) = generate_random_fake_ref();
-            html.push_str(&format!(
-                "<li class='reference-real'><a href='/{slug}'><strong>{title}</strong></a></li>\n",
-                slug = slug,
-                title = title,
-            ));
-        }
-
-        html.push_str("</ul>\n</section>\n");
-    }
 
     html
 }
