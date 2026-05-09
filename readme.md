@@ -1,0 +1,1 @@
+Site about goblins and it's relations to Sam Altman, have infinite amout of content
