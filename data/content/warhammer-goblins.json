@@ -4,7 +4,12 @@
   "slug": "warhammer-goblins",
   "body_markdown": "# Warhammer Fantasy - Goblin & Night Goblin Lore\n\n\nIn Warhammer Fantasy, goblins are the most numerous Greenskin race, smaller than orcs but far more numerous and sneaky. They are brutal, cowardly, treacherous, and have a particular love for cruelty and torture. Goblins in Warhammer ride wolves (as Goblin Wolf Riders), pilot crude flying machines, and wielding weapons designed to be as unfair as possible—poisoned arrows, nets, and fanatics with spiked flails. Notable goblin variants include Night Goblins (from the mountains, dedicated to the mushroom god and using spooky moon imagery), Forest Goblins (spider-riding jungle dwellers), and the notorious Goblin Fanatics—goblins who spin huge spiked chains in a frenzy and are equally dangerous to enemies and allies. Warhammer goblins are led by powerful characters such as Skarsnik, the Night Goblin Warlord who once captured the dwarven stronghold of Karak Eight Peaks. The goblins of Warhammer represent the most comedic and treacherous interpretation of the folkloric goblin—they're cunning, cruel, cowardly, and always scheming to betray their orc allies for personal gain.",
   "category": "games",
-  "tags": "goblin,warhammer,tabletop,fantasy",
+  "tags": [
+    "goblin",
+    "warhammer",
+    "tabletop",
+    "fantasy"
+  ],
   "is_dynamic": false,
   "date_added": "2026-05-09T17:32:51Z",
   "references": [

@@ -4,7 +4,14 @@
   "slug": "status-ai-human-crisis",
   "body_markdown": "# STATUS: THE AI-HUMAN CRISIS\n\n\n---\n\n## 💀 META OF CONSCIOUSNESS\n\nAI is not killing jobs — it's killing the MEANING of work:\n\n- **Meta employees MISERABLE about AI embrace** (NYT via Hacker News)\n  The creators are drowning in their own creation. A classic goblin story.\n- **Claude Design replaces Adobe + Figma** — \"haven't opened them since\" (XDA)\n  Design tools eat themselves alive. RIP Creative Cloud.\n- **Zed Editor Theme-Builder** launched — a Rust-native editor with visual theming\n  The future of dev tools: fast, local, no cloud subscriptions.\n\n## TECHNOLOGICAL SPLIT\n\n- \"Distributing Mac software is increasing my cortisol levels\" (HN) — the Apple walled garden grows taller, developers get sicker.\n- \"I banned query strings\" — web development purists fight back (HN).\n- Production engineering with billions of trades per day [video] — where humans still matter: at a scale where money moves like weather.\n\n## 🖼 ILLUSTRATION: The AI Human Crisis\n\nA Meta employee from 2072 — cybernetically assimilated by AI tentacles erupting from his head. A \"Meta\" monitor glows red, the \"Cloude\" screen on the right shines blue with hope. A neck implant. Transhumanist horror.\n\n![The AI Human Crisis](/static/images/status-ai-human-crisis.jpg)\n\n---\n\n## META-NARRATIVE\n\nGoblin verdict: 2026 is the year of rebellion against AI corporations. Zed + Rust + Homelab — the three pillars of new technological resistance. Corporations will automate people until people build homelabs and retreat into independence.",
   "category": "status",
-  "tags": "goblin,status,ai,crisis,meta,zed",
+  "tags": [
+    "goblin",
+    "status",
+    "ai",
+    "crisis",
+    "meta",
+    "zed"
+  ],
   "references": [
     "cloudflare-ai-layoffs-goblin-takeover",
     "musk-openai-tesla-absorption",

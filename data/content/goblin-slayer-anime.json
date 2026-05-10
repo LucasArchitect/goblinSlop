@@ -4,7 +4,13 @@
   "slug": "goblin-slayer-anime",
   "body_markdown": "# MyAnimeList - Goblin Slayer\n\n\nGoblin Slayer is a dark fantasy anime series based on the light novel by Kumo Kagyu. The story follows a lone adventurer known only as 'Goblin Slayer' who has dedicated his life to the extermination of goblins after they destroyed his village and murdered his family when he was a child. In this world, goblins are often dismissed as weak, low-level monsters by veteran adventurers, but Goblin Slayer knows they are cunning, prolific, and deadly when underestimated. The anime is notorious for its graphic violence in the first episode, where a party of rookie adventurers is brutally massacred by goblins. Goblin Slayer operates on a simple philosophy: goblins are the only evil that matters, and he will use any means—poison, traps, burning oil, ambushes—to kill them. The series has spawned a movie (Goblin Slayer: Goblin's Crown) and a second season. It is produced by WHITE FOX studio.",
   "category": "anime",
-  "tags": "goblin,anime,fantasy,dark,adventure",
+  "tags": [
+    "goblin",
+    "anime",
+    "fantasy",
+    "dark",
+    "adventure"
+  ],
   "is_dynamic": false,
   "date_added": "2026-05-09T17:32:51Z",
   "references": [

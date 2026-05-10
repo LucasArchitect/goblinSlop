@@ -60,7 +60,7 @@ pub async fn home_page(
             &entry.date_added
         };
         let preview = make_preview(&entry.body_markdown);
-        let tag_str = entry.tags.replace(',', " · ");
+        let tag_str = entry.tags.join(" · ");
 
         cards_html.push_str(&format!(
             r#"<a href='/{}' class='article-card'>

@@ -1,6 +1,16 @@
 use rusqlite::{Connection, Result as SqlResult};
 use serde::{Deserialize, Serialize};
 
+// ============================================================
+// Types
+// ============================================================
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SourceRef {
+    pub name: String,
+    pub url: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ContentEntry {
     pub id: i64,
@@ -9,13 +19,11 @@ pub struct ContentEntry {
     pub body_markdown: String,
     pub body_html: String,
     pub category: String,
-    pub tags: String, // comma-separated
-    /// Comma-separated list of target slugs this article explicitly references (from JSON)
-    pub references: String,
-    #[serde(default)]
-    pub sources: String, // JSON array of [{name, url}], empty = "[]"
+    pub tags: Vec<String>,
+    pub references: Vec<String>,
+    pub sources: Vec<SourceRef>,
     pub is_dynamic: bool,
-    pub date_added: String, // ISO 8601 UTC
+    pub date_added: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -26,117 +34,192 @@ pub struct DynamicPage {
     pub keywords: Vec<String>,
 }
 
+// ============================================================
+// Schema
+// ============================================================
+
 pub fn init_db(path: &str) -> SqlResult<Connection> {
     let conn = Connection::open(path)?;
 
+    // Delete old DB so we always start fresh (no migrations needed)
     conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS content (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            slug TEXT NOT NULL UNIQUE,
-            title TEXT NOT NULL,
-            body_markdown TEXT NOT NULL,
-            body_html TEXT NOT NULL,
-            category TEXT NOT NULL DEFAULT 'general',
-            tags TEXT NOT NULL DEFAULT '',
-            \"references\" TEXT NOT NULL DEFAULT '',
-            is_dynamic INTEGER NOT NULL DEFAULT 0,
-            date_added TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z',
-            sources TEXT NOT NULL DEFAULT '[]'
-        );
+        "DROP TABLE IF EXISTS content;
+         DROP TABLE IF EXISTS content_tags;
+         DROP TABLE IF EXISTS content_references;
+         DROP TABLE IF EXISTS content_sources;
+         DROP TABLE IF EXISTS dynamic_pages;
+         DROP TABLE IF EXISTS keywords;
 
-        CREATE TABLE IF NOT EXISTS dynamic_pages (
-            path TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            content TEXT NOT NULL,
-            keywords TEXT NOT NULL DEFAULT ''
-        );
+         CREATE TABLE content (
+             id              INTEGER PRIMARY KEY AUTOINCREMENT,
+             slug            TEXT NOT NULL UNIQUE,
+             title           TEXT NOT NULL,
+             body_markdown   TEXT NOT NULL,
+             body_html       TEXT NOT NULL,
+             category        TEXT NOT NULL DEFAULT 'general',
+             is_dynamic      INTEGER NOT NULL DEFAULT 0,
+             date_added      TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z'
+         );
 
-        CREATE TABLE IF NOT EXISTS keywords (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            keyword TEXT NOT NULL UNIQUE,
-            content_id INTEGER,
-            FOREIGN KEY (content_id) REFERENCES content(id)
-        );",
+         CREATE TABLE content_tags (
+             content_id  INTEGER NOT NULL,
+             tag         TEXT NOT NULL,
+             PRIMARY KEY (content_id, tag),
+             FOREIGN KEY (content_id) REFERENCES content(id)
+         );
+
+         CREATE TABLE content_references (
+             content_id  INTEGER NOT NULL,
+             ref_slug    TEXT NOT NULL,
+             PRIMARY KEY (content_id, ref_slug),
+             FOREIGN KEY (content_id) REFERENCES content(id)
+         );
+
+         CREATE TABLE content_sources (
+             id          INTEGER PRIMARY KEY AUTOINCREMENT,
+             content_id  INTEGER NOT NULL,
+             source_name TEXT NOT NULL,
+             source_url  TEXT NOT NULL DEFAULT '',
+             FOREIGN KEY (content_id) REFERENCES content(id)
+         );
+
+         CREATE TABLE dynamic_pages (
+             path TEXT PRIMARY KEY,
+             title TEXT NOT NULL,
+             content TEXT NOT NULL,
+             keywords TEXT NOT NULL DEFAULT ''
+         );",
     )?;
-
-    // Migration: add columns if upgrading from older schema
-    let existing_columns: Vec<String> = {
-        let mut stmt = conn.prepare("PRAGMA table_info(content)")?;
-        stmt.query_map([], |row| row.get::<_, String>(1))?
-            .filter_map(|r| r.ok())
-            .collect()
-    };
-
-    if !existing_columns.iter().any(|c| c == "date_added") {
-        conn.execute_batch(
-            "ALTER TABLE content ADD COLUMN date_added TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z';",
-        )?;
-        println!("  ↻ Migrated schema: added date_added column to content table");
-    }
-
-    if !existing_columns.iter().any(|c| c == "sources") {
-        conn.execute_batch(
-            "ALTER TABLE content ADD COLUMN sources TEXT NOT NULL DEFAULT '[]';",
-        )?;
-        println!("  ↻ Migrated schema: added sources column to content table");
-    }
 
     Ok(conn)
 }
 
-pub fn insert_content(conn: &Connection, entry: &ContentEntry) -> SqlResult<()> {
+// ============================================================
+// Insert
+// ============================================================
+
+pub fn insert_content(conn: &Connection, entry: &ContentEntry) -> SqlResult<i64> {
     conn.execute(
-        "INSERT OR REPLACE INTO content (slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic, date_added, sources)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+        "INSERT INTO content (slug, title, body_markdown, body_html, category, is_dynamic, date_added)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         rusqlite::params![
             entry.slug,
             entry.title,
             entry.body_markdown,
             entry.body_html,
             entry.category,
-            entry.tags,
-            entry.references,
             entry.is_dynamic as i32,
             entry.date_added,
-            entry.sources,
         ],
     )?;
-    Ok(())
+    let content_id = conn.last_insert_rowid();
+
+    // Insert tags
+    for tag in &entry.tags {
+        conn.execute(
+            "INSERT OR IGNORE INTO content_tags (content_id, tag) VALUES (?1, ?2)",
+            rusqlite::params![content_id, tag],
+        )?;
+    }
+
+    // Insert references
+    for ref_slug in &entry.references {
+        conn.execute(
+            "INSERT OR IGNORE INTO content_references (content_id, ref_slug) VALUES (?1, ?2)",
+            rusqlite::params![content_id, ref_slug],
+        )?;
+    }
+
+    // Insert sources
+    for src in &entry.sources {
+        conn.execute(
+            "INSERT INTO content_sources (content_id, source_name, source_url) VALUES (?1, ?2, ?3)",
+            rusqlite::params![content_id, src.name, src.url],
+        )?;
+    }
+
+    Ok(content_id)
 }
 
-fn map_row(row: &rusqlite::Row) -> rusqlite::Result<ContentEntry> {
+// ============================================================
+// Helpers
+// ============================================================
+
+fn load_tags(conn: &Connection, content_id: i64) -> SqlResult<Vec<String>> {
+    let mut stmt = conn.prepare(
+        "SELECT tag FROM content_tags WHERE content_id = ?1 ORDER BY tag",
+    )?;
+    Ok(stmt
+        .query_map(rusqlite::params![content_id], |row| row.get(0))?
+        .collect::<Result<Vec<_>, _>>()?)
+}
+
+fn load_references(conn: &Connection, content_id: i64) -> SqlResult<Vec<String>> {
+    let mut stmt = conn.prepare(
+        "SELECT ref_slug FROM content_references WHERE content_id = ?1 ORDER BY ref_slug",
+    )?;
+    Ok(stmt
+        .query_map(rusqlite::params![content_id], |row| row.get(0))?
+        .collect::<Result<Vec<_>, _>>()?)
+}
+
+fn load_sources(conn: &Connection, content_id: i64) -> SqlResult<Vec<SourceRef>> {
+    let mut stmt = conn.prepare(
+        "SELECT source_name, source_url FROM content_sources WHERE content_id = ?1 ORDER BY id",
+    )?;
+    Ok(stmt
+        .query_map(rusqlite::params![content_id], |row| {
+            Ok(SourceRef {
+                name: row.get(0)?,
+                url: row.get(1)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?)
+}
+
+fn hydrate_row(conn: &Connection, row: &rusqlite::Row) -> SqlResult<ContentEntry> {
+    let id: i64 = row.get(0)?;
     Ok(ContentEntry {
-        id: row.get(0)?,
+        id,
         slug: row.get(1)?,
         title: row.get(2)?,
         body_markdown: row.get(3)?,
         body_html: row.get(4)?,
         category: row.get(5)?,
-        tags: row.get(6)?,
-        references: row.get(7)?,
-        is_dynamic: row.get::<_, i32>(8)? != 0,
-        date_added: row.get(9)?,
-        sources: row.get(10)?,
+        tags: load_tags(conn, id)?,
+        references: load_references(conn, id)?,
+        sources: load_sources(conn, id)?,
+        is_dynamic: row.get::<_, i32>(6)? != 0,
+        date_added: row.get(7)?,
     })
 }
 
-const SELECT_ALL: &str = "SELECT id, slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic, date_added, sources FROM content";
+const SELECT_CONTENT: &str =
+    "SELECT id, slug, title, body_markdown, body_html, category, is_dynamic, date_added FROM content";
+
+// ============================================================
+// Queries
+// ============================================================
 
 pub fn get_content_by_slug(conn: &Connection, slug: &str) -> SqlResult<Option<ContentEntry>> {
-    let mut stmt = conn.prepare(&format!("{SELECT_ALL} WHERE slug = ?1"))?;
-    let mut rows = stmt.query_map(rusqlite::params![slug], map_row)?;
+    let mut stmt = conn.prepare(&format!("{SELECT_CONTENT} WHERE slug = ?1"))?;
+    let mut rows = stmt.query_map(rusqlite::params![slug], |row| hydrate_row(conn, row))?;
     match rows.next() {
         Some(Ok(entry)) => Ok(Some(entry)),
         _ => Ok(None),
     }
 }
 
-pub fn get_content_paginated(conn: &Connection, page: u64, per_page: u64) -> SqlResult<Vec<ContentEntry>> {
+pub fn get_content_paginated(
+    conn: &Connection,
+    page: u64,
+    per_page: u64,
+) -> SqlResult<Vec<ContentEntry>> {
     let offset = (page.saturating_sub(1)) * per_page;
     let mut stmt = conn.prepare(&format!(
-        "{SELECT_ALL} ORDER BY date_added DESC, id DESC LIMIT ?1 OFFSET ?2"
+        "{SELECT_CONTENT} ORDER BY date_added DESC, id DESC LIMIT ?1 OFFSET ?2"
     ))?;
-    stmt.query_map(rusqlite::params![per_page, offset], map_row)?
+    stmt.query_map(rusqlite::params![per_page, offset], |row| hydrate_row(conn, row))?
         .collect()
 }
 
@@ -145,17 +228,26 @@ pub fn count_all_content(conn: &Connection) -> SqlResult<u64> {
 }
 
 pub fn get_all_content(conn: &Connection) -> SqlResult<Vec<ContentEntry>> {
-    let mut stmt = conn.prepare(&format!("{SELECT_ALL} ORDER BY date_added DESC, id DESC"))?;
-    stmt.query_map([], map_row)?.collect()
+    let mut stmt =
+        conn.prepare(&format!("{SELECT_CONTENT} ORDER BY date_added DESC, id DESC"))?;
+    stmt.query_map([], |row| hydrate_row(conn, row))?
+        .collect()
 }
 
 pub fn search_content(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEntry>> {
     let pattern = format!("%{}%", query);
     let mut stmt = conn.prepare(&format!(
-        "{SELECT_ALL} WHERE title LIKE ?1 OR body_markdown LIKE ?1 OR tags LIKE ?1 ORDER BY date_added DESC, id DESC"
+        "{SELECT_CONTENT} WHERE title LIKE ?1 OR body_markdown LIKE ?1 OR slug IN (
+            SELECT content_id FROM content_tags WHERE tag LIKE ?1
+        ) ORDER BY date_added DESC, id DESC"
     ))?;
-    stmt.query_map(rusqlite::params![pattern], map_row)?.collect()
+    stmt.query_map(rusqlite::params![pattern], |row| hydrate_row(conn, row))?
+        .collect()
 }
+
+// ============================================================
+// Dynamic pages (unused but kept)
+// ============================================================
 
 #[allow(dead_code)]
 pub fn insert_dynamic_page(conn: &Connection, page: &DynamicPage) -> SqlResult<()> {

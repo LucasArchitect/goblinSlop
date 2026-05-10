@@ -86,6 +86,7 @@ fn build_head(
 /// Render a standard content page with JSON-LD metadata
 pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url: &str) -> String {
     let mut html = String::new();
+    let tags_str = entry.tags.join(", ");
 
     let head = build_head(
         &format!("{} - GoblinSlop", entry.title),
@@ -96,7 +97,7 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
         "Article",
         &entry.title,
         &format!("Goblin content: {}", entry.title),
-        &entry.tags,
+        &tags_str,
     );
     html.push_str(&head);
 
@@ -116,50 +117,32 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
 </article>"#,
         title = entry.title,
         category = entry.category,
-        tags = entry.tags,
+        tags = tags_str,
         body = entry.body_html,
     ));
 
     // Cross-references — explicit JSON refs + keyword-matched + random fake refs in one block
-    let refs_keywords: Vec<String> = entry
-        .tags
-        .split(',')
-        .map(|t| t.trim().to_string())
-        .chain(std::iter::once(entry.slug.split('-').map(|s| s.to_string()).collect::<Vec<_>>().join(" ")))
-        .filter(|t| !t.is_empty())
-        .collect();
-    let explicit_slugs: Vec<String> = entry
-        .references
-        .split(',')
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .collect();
+    let mut refs_keywords: Vec<String> = entry.tags.clone();
+    refs_keywords.extend(
+        entry.slug.split('-').map(|s| s.to_string())
+    );
+    let explicit_slugs = entry.references.clone();
     html.push_str(&generate_references_html_thread_rng(&refs_keywords, Some(&entry.slug), &explicit_slugs));
 
     // Sources section (external references like IMDb, MyAnimeList, etc.)
-    let sources_html = build_sources_html(&entry.sources);
-    html.push_str(&sources_html);
+    if !entry.sources.is_empty() {
+        html.push_str("<section class='sources-section'><h2>Sources</h2><ul class='sources-list'>");
+        for src in &entry.sources {
+            if src.url.is_empty() {
+                html.push_str(&format!("<li>{}</li>", src.name));
+            } else {
+                html.push_str(&format!("<li><a href='{}' target='_blank' rel='noopener noreferrer'>{}</a></li>", src.url, src.name));
+            }
+        }
+        html.push_str("</ul></section>");
+    }
 
     html.push_str(BASE_HTML_FOOT);
-    html
-}
-
-fn build_sources_html(sources_json: &str) -> String {
-    let sources: Vec<serde_json::Value> = serde_json::from_str(sources_json).unwrap_or_default();
-    if sources.is_empty() {
-        return String::new();
-    }
-    let mut html = String::from("<section class='sources-section'><h2>Sources</h2><ul class='sources-list'>");
-    for src in &sources {
-        let name = src["name"].as_str().unwrap_or("Unknown");
-        let url = src["url"].as_str().unwrap_or("");
-        if url.is_empty() {
-            html.push_str(&format!("<li>{name}</li>"));
-        } else {
-            html.push_str(&format!("<li><a href='{url}' target='_blank' rel='noopener noreferrer'>{name}</a></li>"));
-        }
-    }
-    html.push_str("</ul></section>");
     html
 }
 

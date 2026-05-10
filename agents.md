@@ -133,18 +133,39 @@ goblinSlop/
 
 ### Database Schema
 
-**Table: `content`**
+**Table: `content`** — Core article data
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | INTEGER PK AUTO | Auto-incrementing ID |
 | `slug` | TEXT UNIQUE | URL-friendly identifier (e.g., `goblin-lore`) |
-| `title` | TEXT | Page title (stored in JSON file) |
-| `body_markdown` | TEXT | Raw Markdown source (stored in JSON file) |
+| `title` | TEXT | Page title |
+| `body_markdown` | TEXT | Raw Markdown source |
 | `body_html` | TEXT | Pre-rendered HTML from Markdown |
-| `category` | TEXT | Category (lore, tricks, anime, pop_culture, ttrpg, games, etc.) |
-| `tags` | TEXT | Comma-separated tags (e.g., `goblin,lore`) |
+| `category` | TEXT | Category (lore, tricks, anime, pop_culture, etc.) |
 | `is_dynamic` | INTEGER | Boolean: 0 = static; 1 = dynamic |
 | `date_added` | TEXT | ISO 8601 UTC timestamp (e.g., `2026-05-09T17:33:37Z`) |
+
+**Table: `content_tags`** — Tags (one row per tag per article)
+| Column | Type | Description |
+|--------|------|-------------|
+| `content_id` | INTEGER | FK → `content.id` |
+| `tag` | TEXT | Single tag (e.g., `goblin`, `lore`) |
+| *(composite PK)* | | `(content_id, tag)` |
+
+**Table: `content_references`** — Cross-references (one row per target slug per article)
+| Column | Type | Description |
+|--------|------|-------------|
+| `content_id` | INTEGER | FK → `content.id` |
+| `ref_slug` | TEXT | Target article slug |
+| *(composite PK)* | | `(content_id, ref_slug)` |
+
+**Table: `content_sources`** — External sources (one row per source per article)
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | INTEGER PK AUTO | Auto-incrementing ID |
+| `content_id` | INTEGER | FK → `content.id` |
+| `source_name` | TEXT | Display name for external source |
+| `source_url` | TEXT | URL for external source |
 
 **Table: `dynamic_pages`**
 | Column | Type | Description |
@@ -153,13 +174,6 @@ goblinSlop/
 | `title` | TEXT | Generated title |
 | `content` | TEXT | Generated HTML content body |
 | `keywords` | TEXT | Comma-separated keywords extracted from path |
-
-**Table: `keywords`**
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | INTEGER PK AUTO | Auto-incrementing ID |
-| `keyword` | TEXT UNIQUE | Individual keyword |
-| `content_id` | INTEGER FK | References `content.id` |
 
 ### Unified JSON Format
 
@@ -172,7 +186,10 @@ Each content file in `data/content/` follows this schema:
   "slug": "goblin_lore",
   "body_markdown": "# Goblin Lore: The Ancient Tricksters\n\n...",
   "category": "lore",
-  "tags": "goblin,lore",
+  "tags": ["goblin", "lore"],
+  "sources": [
+    { "name": "Wikipedia - Goblin", "url": "https://en.wikipedia.org/wiki/Goblin" }
+  ],
   "references": ["goblin-tricks", "goblin-schizophrenia", "slop-goblin-manifesto"],
   "is_dynamic": false,
   "date_added": "2026-05-09T17:33:37Z"
@@ -185,14 +202,15 @@ Each content file in `data/content/` follows this schema:
 - `slug`: URL-friendly identifier (hyphenated)
 - `body_markdown`: Raw Markdown content (auto-converted to HTML on load)
 - `category`: Content category (lore, tricks, anime, pop_culture, ttrpg, games, visual_novels, linguistics, etc.)
-- `tags`: Comma-separated tags (defaults to `"goblin"` if empty)
-- `references`: JSON array of target slugs this article explicitly cross-references. These are matched first by the reference engine, guaranteeing meaningful links. Falls back to keyword matching + random fill if empty.
+- `tags`: JSON array of tag strings (defaults to `["goblin"]` if empty). Always an array, not a comma-separated string.
+- `sources`: JSON array of `{name, url}` objects. External references (e.g., IMDb, MyAnimeList, Wikipedia). Displayed at bottom of content pages.
+- `references`: JSON array of target slugs this article explicitly cross-references
 - `is_dynamic`: Always `false` for stored content
 - `date_added`: ISO 8601 UTC timestamp when the file was created
 
 ### Startup Sequence
 
-1. `main()` calls `db::init_db("goblin_slop.db")` which creates all three tables if they don't exist
+1. `main()` calls `db::init_db("goblin_slop.db")` which drops old tables and creates fresh normalized schema (no migrations needed)
 2. `json_content_loader::load_all_content("goblin_slop.db", "data/content")` reads every `.json` file in `data/content/`:
    - Each file is deserialized into `JsonContentEntry` via serde
    - Markdown body is converted to HTML via `pulldown_cmark`
@@ -274,20 +292,21 @@ mod routes;
 
 | Struct | Fields | Purpose |
 |--------|--------|---------|
-| `ContentEntry` | `id, slug, title, body_markdown, body_html, category, tags, is_dynamic, date_added` | Represents a row in the `content` table. All fields public, implements `Debug`, `Serialize`, `Deserialize`, `Clone`. |
-| `DynamicPage` | `path, title, content, keywords` | Represents a cached dynamically-generated page. `keywords` is stored as comma-separated string in DB but loaded as `Vec<String>`. |
+| `SourceRef` | `name, url` | Represents one external source. Stored in `content_sources` table. |
+| `ContentEntry` | `id, slug, title, body_markdown, body_html, category, tags: Vec<String>, references: Vec<String>, sources: Vec<SourceRef>, is_dynamic, date_added` | Represents a content article with all related data from normalized tables. |
+| `DynamicPage` | `path, title, content, keywords` | Represents a cached dynamically-generated page. |
 
 **Functions:**
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `init_db` | `(path: &str) -> SqlResult<Connection>` | Opens/creates SQLite file, executes CREATE TABLE IF NOT EXISTS for all three tables |
-| `insert_content` | `(conn: &Connection, entry: &ContentEntry) -> SqlResult<()>` | INSERT OR REPLACE into content table |
-| `get_content_by_slug` | `(conn: &Connection, slug: &str) -> SqlResult<Option<ContentEntry>>` | SELECT by slug, returns None if not found |
-| `get_all_content` | `(conn: &Connection) -> SqlResult<Vec<ContentEntry>>` | SELECT all content ordered by `date_added DESC, id DESC` |
+| `init_db` | `(path: &str) -> SqlResult<Connection>` | Drops old tables, creates fresh normalized schema |
+| `insert_content` | `(conn: &Connection, entry: &ContentEntry) -> SqlResult<i64>` | Inserts article + related tags/references/sources into normalized tables |
+| `get_content_by_slug` | `(conn: &Connection, slug: &str) -> SqlResult<Option<ContentEntry>>` | SELECT by slug, hydrates all related data from normalized tables |
 | `get_content_paginated` | `(conn: &Connection, page, per_page) -> SqlResult<Vec<ContentEntry>>` | Paginated SELECT with LIMIT/OFFSET, newest-first |
 | `count_all_content` | `(conn: &Connection) -> SqlResult<u64>` | COUNT(*) of all content entries |
-| `search_content` | `(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEntry>>` | LIKE search across title, body_markdown, tags, newest-first |
+| `get_all_content` | `(conn: &Connection) -> SqlResult<Vec<ContentEntry>>` | SELECT all content, newest-first |
+| `search_content` | `(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEntry>>` | LIKE search across title, body, tags (including tag table) |
 | `insert_dynamic_page` | `(conn: &Connection, page: &DynamicPage) -> SqlResult<()>` | INSERT OR REPLACE into dynamic_pages table |
 | `get_dynamic_page` | `(conn: &Connection, path: &str) -> SqlResult<Option<DynamicPage>>` | SELECT by path, returns None if not found |
 
@@ -302,10 +321,12 @@ pub struct JsonContentEntry {
     pub title: String,
     pub slug: String,
     pub body_markdown: String,
-    pub category: String,   // default: "general"
-    pub tags: String,       // default: empty → "goblin" at load time
+    pub category: String,        // default: "general"
+    pub tags: Vec<String>,       // default: ["goblin"]
+    pub references: Vec<String>, // cross-reference target slugs
+    pub sources: Vec<SourceRef>, // external sources [{name, url}]
     pub is_dynamic: bool,
-    pub date_added: String, // ISO 8601 UTC, default: "1970-01-01T00:00:00Z"
+    pub date_added: String,      // ISO 8601 UTC, default: "1970-01-01T00:00:00Z"
 }
 ```
 
@@ -321,7 +342,9 @@ Scans `content_dir` for all `.json` files. For each file:
 4. INSERT OR REPLACE into `content` table
 
 **Processing logic:**
-- Empty `tags` → defaults to `"goblin"` before DB insert
+- Empty `tags` → defaults to `["goblin"]` before DB insert
+- `sources` are stored in the `content_sources` table, one row per source
+- `references` are stored in the `content_references` table, one row per target slug
 - Sorts files alphabetically for deterministic load order
 - Prints `✅` on success, `❌` on DB error, `⚠️` on invalid JSON
 
@@ -518,21 +541,25 @@ All dynamic pages appear identical to static pages — no badges, notes, or indi
 
 ### Unit Tests
 
-Located in `src/json_content_loader.rs` and `src/routes/generator.rs` (`#[cfg(test)]` modules):
+Located in `src/json_content_loader.rs` and `src/routes/generator.rs`:
 
-**`test_deserialize_single_content_unit`** (in `json_content_loader.rs`): Loads one actual JSON file (`data/content/goblin_lore.json`), deserializes into `JsonContentEntry`, verifies all fields: id, slug, title, body_markdown (starts with heading), category, tags, date_added (ISO 8601 format), is_dynamic.
 
-**`test_generated_content_is_deterministic`** (in `generator.rs`): Generates dynamic content twice from the same path and asserts the title and content are byte-for-byte identical.
+**`test_deserialize_single_content_unit`** — Loads one actual JSON file, deserializes into `JsonContentEntry`, verifies all fields: id, slug, title, tags (array), references (array), date_added (ISO 8601), is_dynamic.
 
-**`test_different_paths_produce_different_content`** (in `generator.rs`): Generates dynamic content from two different paths and asserts the outputs differ.
+**`test_load_and_read_entry_with_all_fields`** — Loads all 41 JSON files into a fresh DB, reads back `goblin-slayer-anime`, verifies all normalized fields: tags (from `content_tags` table), references (from `content_references` table), sources (from `content_sources` table) with proper names and URLs.
+
+**`test_generated_content_is_deterministic`** — Generates dynamic content twice from the same path and asserts byte-for-byte identical output.
+
+**`test_different_paths_produce_different_content`** — Generates dynamic content from two different paths and asserts outputs differ.
 
 ```bash
 cargo test --release
-# running 3 tests
+# running 4 tests
 # test json_content_loader::tests::test_deserialize_single_content_unit ... ok
 # test routes::generator::tests::test_different_paths_produce_different_content ... ok
 # test routes::generator::tests::test_generated_content_is_deterministic ... ok
-# test result: ok. 3 passed; 0 failed; 0 ignored
+# test json_content_loader::tests::test_load_and_read_entry_with_all_fields ... ok
+# test result: ok. 4 passed; 0 failed; 0 ignored
 ```
 
 ---
@@ -590,7 +617,11 @@ Using `Arc<Mutex<Connection>>` means only one request at a time accesses the dat
   "slug": "my-new-content",
   "body_markdown": "# My Cool Goblin Article\n\nContent here...",
   "category": "general",
-  "tags": "goblin,example",
+  "tags": ["goblin", "example"],
+  "sources": [
+    { "name": "Source Name", "url": "https://example.com" }
+  ],
+  "references": ["other-article-slug"],
   "is_dynamic": false,
   "date_added": "2026-05-09T00:00:00Z"
 }

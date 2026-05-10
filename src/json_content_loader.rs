@@ -1,18 +1,12 @@
-use crate::db::{init_db, insert_content, ContentEntry};
+use crate::db::{init_db, insert_content, ContentEntry, SourceRef};
 use pulldown_cmark::{html, Parser};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::fs;
 use std::path::Path;
 
-/// A source reference: name + URL
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SourceRef {
-    pub name: String,
-    pub url: String,
-}
-
 /// Unified content entry — loaded from individual JSON files in data/content/
 /// Schema: { id, title, slug, body_markdown, category, tags, references, sources, is_dynamic, date_added }
+/// All list fields (tags, references, sources) are JSON arrays.
 #[derive(Debug, Deserialize)]
 pub struct JsonContentEntry {
     pub id: String,
@@ -21,8 +15,9 @@ pub struct JsonContentEntry {
     pub body_markdown: String,
     #[serde(default = "default_category")]
     pub category: String,
-    #[serde(default)]
-    pub tags: String,
+    /// Array of tags, e.g. ["goblin", "lore"]. Defaults to ["goblin"] if empty.
+    #[serde(default = "default_tags")]
+    pub tags: Vec<String>,
     /// Array of target slugs this article explicitly references
     #[serde(default)]
     pub references: Vec<String>,
@@ -39,13 +34,15 @@ fn default_category() -> String {
     "general".to_string()
 }
 
+fn default_tags() -> Vec<String> {
+    vec!["goblin".to_string()]
+}
+
 fn default_date_added() -> String {
     "1970-01-01T00:00:00Z".to_string()
 }
 
 /// Loads all individual JSON content files from `data/content/` into the database.
-/// Each .json file is treated as one content unit with unified schema:
-/// { id, title, slug, body_markdown, category, tags, references, is_dynamic, date_added }
 pub fn load_all_content(
     db_path: &str,
     content_dir: &str,
@@ -80,19 +77,8 @@ pub fn load_all_content(
 
         match serde_json::from_str::<JsonContentEntry>(&json_content) {
             Ok(json_entry) => {
-                // Convert markdown → HTML
                 let body_html = markdown_to_html(&json_entry.body_markdown);
-
-                let tags = if json_entry.tags.is_empty() {
-                    "goblin".to_string()
-                } else {
-                    json_entry.tags.clone()
-                };
-
-                // Join references array into comma-separated string for DB storage
-                let references_str = json_entry.references.join(",");
-
-                let sources_json = serde_json::to_string(&json_entry.sources).unwrap_or_else(|_| "[]".to_string());
+                let ref_count = json_entry.references.len();
 
                 let content_entry = ContentEntry {
                     id: 0,
@@ -101,9 +87,9 @@ pub fn load_all_content(
                     body_markdown: json_entry.body_markdown,
                     body_html,
                     category: json_entry.category.clone(),
-                    tags,
-                    references: references_str,
-                    sources: sources_json,
+                    tags: json_entry.tags,
+                    references: json_entry.references,
+                    sources: json_entry.sources,
                     is_dynamic: json_entry.is_dynamic,
                     date_added: json_entry.date_added.clone(),
                 };
@@ -111,10 +97,10 @@ pub fn load_all_content(
                 match insert_content(&conn, &content_entry) {
                     Ok(_) => println!(
                         "  ✅ Loaded content: {} (slug: {}, date_added: {}, refs: {} entries)",
-                        json_entry.title,
-                        json_entry.slug,
-                        json_entry.date_added,
-                        json_entry.references.len()
+                        content_entry.title,
+                        content_entry.slug,
+                        content_entry.date_added,
+                        ref_count
                     ),
                     Err(e) => eprintln!("  ❌ Failed to load '{}': {}", json_entry.id, e),
                 }
@@ -138,11 +124,9 @@ fn markdown_to_html(markdown: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
 
     #[test]
     fn test_deserialize_single_content_unit() {
-        // Load one actual JSON file from data/content/ and verify deserialization
         let test_file = std::path::PathBuf::from("data/content/goblin_lore.json");
         assert!(test_file.exists(), "Test file data/content/goblin_lore.json must exist");
 
@@ -150,28 +134,81 @@ mod tests {
         let entry: JsonContentEntry = serde_json::from_str(&json_str)
             .expect("Should deserialize goblin_lore.json into JsonContentEntry");
 
-        // Verify all fields populated correctly
         assert!(!entry.id.is_empty(), "id must not be empty");
         assert_eq!(entry.slug, "goblin_lore", "slug should match filename stem");
-        assert!(entry.title.contains("Goblin Lore"), "title should contain expected text");
+        assert!(entry.title.starts_with("Goblin Lore"), "title should contain expected text");
         assert!(
             entry.body_markdown.starts_with("# Goblin Lore"),
             "body_markdown should start with heading"
         );
-        assert_eq!(entry.category, "lore", "category inferred from filename stem");
-        assert!(
-            entry.tags.contains("goblin") || entry.tags.is_empty() == false,
-            "tags must not be empty (default: goblin)"
-        );
-        assert!(!entry.date_added.is_empty(), "date_added must be present");
-        assert_eq!(entry.is_dynamic, false, "static content must not be dynamic");
+        assert_eq!(entry.category, "lore");
+        assert_eq!(entry.is_dynamic, false);
+        assert!(!entry.date_added.is_empty());
+        assert_eq!(entry.date_added.len(), 20);
+        assert!(entry.date_added.ends_with('Z'));
+        assert!(!entry.references.is_empty(), "references must have entries");
 
-        // Verify date_added format (ISO 8601)
+        assert!(!entry.tags.is_empty(), "tags must not be empty");
         assert!(
-            entry.date_added.len() == 20 && entry.date_added.ends_with('Z'),
-            "date_added should be ISO 8601 UTC format"
+            entry.tags.iter().any(|t| t == "goblin" || t == "lore"),
+            "tags should contain goblin or lore"
         );
 
-        println!("✅ test_deserialize_single_content_unit passed: {} (slug: {})", entry.title, entry.slug);
+        println!(
+            "✅ test_deserialize_single_content_unit passed: {} (slug: {})",
+            entry.title, entry.slug
+        );
+    }
+
+    #[test]
+    fn test_load_and_read_entry_with_all_fields() {
+        use crate::db::get_content_by_slug;
+        use rusqlite::Connection;
+
+        let db_path = "test_load_entry.db";
+        let test_slug = "goblin-slayer-anime";
+
+        let _ = std::fs::remove_file(db_path);
+        load_all_content(db_path, "data/content").expect("load_all_content should succeed");
+        let conn = Connection::open(db_path).expect("open db should succeed");
+
+        let entry = get_content_by_slug(&conn, test_slug)
+            .expect("query should succeed")
+            .expect("entry must exist");
+
+        // Core fields
+        assert_eq!(entry.slug, test_slug);
+        assert!(!entry.title.is_empty());
+        assert!(!entry.body_markdown.is_empty());
+        assert!(!entry.body_html.is_empty());
+        assert!(!entry.category.is_empty());
+
+        // Tags (normalized into dedicated table)
+        assert!(!entry.tags.is_empty());
+        assert!(entry.tags.contains(&"goblin".to_string()));
+
+        // References (normalized into dedicated table)
+        assert!(!entry.references.is_empty());
+        for r in &entry.references {
+            assert!(!r.is_empty(), "each reference slug must be non-empty");
+        }
+
+        // Sources (normalized into dedicated table)
+        assert!(!entry.sources.is_empty());
+        for s in &entry.sources {
+            assert!(!s.name.is_empty(), "source name must be non-empty");
+            assert!(s.url.starts_with("http"), "source url must start with http");
+        }
+
+        assert!(!entry.is_dynamic);
+        assert!(!entry.date_added.is_empty());
+        assert_eq!(entry.date_added.len(), 20);
+        assert!(entry.date_added.ends_with('Z'));
+
+        println!(
+            "✅ test_load_and_read_entry_with_all_fields passed for {test_slug}"
+        );
+
+        let _ = std::fs::remove_file(db_path);
     }
 }

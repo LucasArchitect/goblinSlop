@@ -4,7 +4,14 @@
   "slug": "status-green-storm-cruise-ships",
   "body_markdown": "# STATUS: THE GREEN STORM OF CRUISE SHIPS\n\n\n---\n\n## 🦠 HANTAVIRUS ON CRUISE SHIPS\n\nCruise ships are the perfect incubator for pathogens. The world is becoming more infectious:\n\n- **Countries prepare to evacuate hantavirus ship passengers** (Japan Today)\n  Nations preparing to evacuate cruise passengers with hantavirus. 3 dead in the UK.\n- **UK will quarantine cruise ship passengers in a former COVID hospital** (SCMP)\n  Britain repurposes an old COVID hospital for cruise passenger quarantine. The cycle of disease continues.\n- **Hantavirus spreads to America, cruises prone to disease outbreaks** (Daily Mail)\n  The virus reaches the USA. Cruise ships are super-spreaders. Stay safe while sailing, mundanes.\n\n## 💊 FENTANYL-LACED DRUGS WARNING\n\n- **US authorities warn World Cup visitors of fentanyl-laced drugs**\n  World Cup 2026 — not just football. Fentanyl-laced drugs. Three opening ceremonies and warnings about poisoning. The world is absurd.\n\n## 🖼 ILLUSTRATION: The Green Storm\n\nA massive cruise ship \"QUAANERS\" in toxic green fog. Biohazard symbols glow on the hull, green smoke pours from funnels. Tugboats with orange spotlights surround it as a quarantine force. A distant World Cup stadium flickers — irony between celebration and pandemic.\n\n![The Green Storm of Cruise Ships](/static/images/status-green-storm-cruise-ships.jpg)\n\n---\n\n## META-NARRATIVE\n\nGoblin verdict: hantavirus + fentanyl = the perfect 2026 pandemic. Cruise ships are new Super-Spreaders, and the World Cup brings not just goals but poisoning warnings. The world is a goblin's cave, and we're all inside it.",
   "category": "status",
-  "tags": "goblin,status,hantavirus,cruise,pandemic,fentanyl",
+  "tags": [
+    "goblin",
+    "status",
+    "hantavirus",
+    "cruise",
+    "pandemic",
+    "fentanyl"
+  ],
   "references": [
     "goblin-mode-2026-global-chaos-index",
     "slop-goblin-manifesto"
