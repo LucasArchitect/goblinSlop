@@ -112,7 +112,8 @@ goblinSlop/
 │   ├── json_content_loader.rs   #   Unified JSON content loader (single source)
 │   └── routes/                  #   Route handlers module directory
 │       ├── mod.rs               #     Module declaration, AppState, create_router()
-│       ├── handlers.rs          #     All 10 route handler functions (incl. sitemap)
+│       ├── handlers.rs          #     Shared `ApiResponse` type
+│       ├── pages/               #     One file per route handler (9 files)
 │       ├── templates.rs         #     HTML template rendering functions
 │       ├── content_templates.rs #     Text templates (titles, intros, bodies, verdicts)
 │       ├── references.rs        #     Real & randomly-generated fake page references
@@ -328,11 +329,12 @@ The `src/routes/` directory holds six files, split by concern:
 | File | Purpose |
 |------|---------|
 | `mod.rs` | Module declarations, `AppState`, `create_router()` |
-| `handlers.rs` | All 10 route handler functions (incl. sitemap) |
+| `handlers.rs` | Shared `ApiResponse` type (all handler logic moved to `pages/`) |
 | `templates.rs` | HTML page layout rendering (JSON-LD, nav, footer, canonical URLs, robots) |
 | `content_templates.rs` | Text template arrays (titles, intros, bodies, verdicts) + related section generator |
 | `references.rs` | Real page references + randomly-generated fake page reference engine |
-| `generator.rs` | Thin coordinator: pulls from content_templates and references to assemble `DynamicPage` |
+| `generator.rs` | Coordinator: assembles dynamic page from templates + refs |
+| `pages/` | **One file per route handler** — all handler logic lives here |
 
 #### `src/routes/mod.rs`
 Module declaration and router construction:
@@ -341,6 +343,7 @@ Module declaration and router construction:
 pub mod content_templates;
 pub mod generator;
 pub mod handlers;
+pub mod pages;
 pub mod references;
 pub mod templates;
 ```
@@ -350,20 +353,21 @@ pub mod templates;
   1. **Inner router** (exact routes): `/`, `/search`, `/sitemap.xml`, `/raw/:slug`, `/api/content/:slug`, `/api/dynamic/*path`, `/api/search`, `/api/all`
   2. **Outer router** (fallback): Any path that doesn't match the inner router gets handled by `dynamic_fallback`
 
-#### `src/routes/handlers.rs`
-All 10 route handler functions:
+#### `src/routes/pages/` — One file per route handler
 
-| Handler | Route | Logic |
-|---------|-------|-------|
-| `home_page` | `GET /` | Query all content, build list HTML, render as static page |
-| `sitemap` | `GET /sitemap.xml` | Generates XML sitemap listing home, search, and all static content entries with absolute URLs from `base_url` |
-| `dynamic_fallback` | `GET /*` | Extract path from URI. If contains underscores → 301 redirect to hyphen form. Otherwise check static by slug, check cached dynamic, or generate new |
-| `search_page` | `GET /search?q=` | If q present: search DB, show results. If not: show search form |
-| `raw_content` | `GET /raw/:slug` | Return raw Markdown body as text/plain |
-| `api_content` | `GET /api/content/:slug` | Return single ContentEntry as JSON |
-| `api_dynamic` | `GET /api/dynamic/*path` | Return DynamicPage as JSON (generate if needed) |
-| `api_search` | `GET /api/search?q=` | Return search results as JSON |
-| `api_all` | `GET /api/all` | Return all ContentEntries as JSON |
+| File | Route | Purpose |
+|------|-------|---------|
+| `home.rs` | `GET /` | Query all content, build list HTML, render as static page |
+| `sitemap.rs` | `GET /sitemap.xml` | XML sitemap listing home, search, all static content entries |
+| `search.rs` | `GET /search?q=` | If q present: search DB, show results. If not: show search form |
+| `raw.rs` | `GET /raw/:slug` | Return raw Markdown body as text/plain |
+| `dynamic_fallback.rs` | `GET /*` | Underscores → 301 redirect, else check static or generate deterministic dynamic page |
+| `api_content.rs` | `GET /api/content/:slug` | Return single ContentEntry as JSON |
+| `api_dynamic.rs` | `GET /api/dynamic/*path` | Return DynamicPage as JSON (deterministic, no DB cache) |
+| `api_search.rs` | `GET /api/search?q=` | Return search results as JSON |
+| `api_all.rs` | `GET /api/all` | Return all ContentEntries as JSON |
+
+`src/routes/handlers.rs` now only contains the shared `ApiResponse<T>` struct.
 
 #### `src/routes/templates.rs`
 HTML template rendering functions:
@@ -471,10 +475,10 @@ Full crawl allowed. The sitemap is discoverable via `/sitemap.xml`.
 
 | Endpoint | Method | Description | Response |
 |----------|--------|-------------|----------|
-| `/api/all` | GET | All content entries | `{ success: true, data: [...], source: "static" }` |
-| `/api/content/:slug` | GET | Single entry by slug | `{ success: true/false, data: {...}, source: "static" }` |
-| `/api/dynamic/*path` | GET | Dynamic page by path | `{ success: true, data: {...}, source: "deterministic" }` |
-| `/api/search?q=...` | GET | Search results | `{ success: true, data: [...], source: "search" }` |
+| `/api/all` | GET | All content entries | `{ success: true, data: [...] }` |
+| `/api/content/:slug` | GET | Single entry by slug | `{ success: true/false, data: {...} }` |
+| `/api/dynamic/*path` | GET | Dynamic page by path | `{ success: true, data: {...} }` |
+| `/api/search?q=...` | GET | Search results | `{ success: true, data: [...] }` |
 
 ### Response Format
 
@@ -483,8 +487,7 @@ All JSON responses follow a consistent structure:
 ```json
 {
   "success": true|false,
-  "data": <ContentEntry>|<DynamicPage>|[...],
-  "source": "static"|"cached_dynamic"|"new_dynamic"|"search"
+  "data": <ContentEntry>|<DynamicPage>|[...]
 }
 ```
 
@@ -593,9 +596,10 @@ Using `Arc<Mutex<Connection>>` means only one request at a time accesses the dat
 
 ### Adding New Routes
 
-1. Add handler function in `src/routes/handlers.rs`
-2. Register route in `src/routes/mod.rs` inside `create_router()`
-3. The fallback ensures no path returns 404 regardless
+1. Create a new handler file in `src/routes/pages/`
+2. Add its module declaration to `src/routes/pages/mod.rs`
+3. Register the route in `src/routes/mod.rs` inside `create_router()`
+4. The fallback ensures no path returns 404 regardless
 
 ---
 

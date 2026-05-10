@@ -1,6 +1,7 @@
 pub mod content_templates;
 pub mod generator;
 pub mod handlers;
+pub mod pages;
 pub mod references;
 pub mod templates;
 
@@ -10,9 +11,16 @@ use axum::{
 };
 use std::sync::Arc;
 
-use handlers::{
-    api_all, api_content, api_dynamic, api_search,
-    dynamic_fallback, home_page, raw_content, search_page, sitemap,
+use pages::{
+    api_all::api_all,
+    api_content::api_content,
+    api_dynamic::api_dynamic,
+    api_search::api_search,
+    dynamic_fallback::dynamic_fallback,
+    home::home_page,
+    raw::raw_content,
+    search::search_page,
+    sitemap::sitemap,
 };
 
 #[derive(Clone)]
