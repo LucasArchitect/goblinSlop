@@ -351,6 +351,15 @@ body {
     letter-spacing: 0.02em;
 }
 
+.page-body img {
+    max-width: 100%;
+    height: auto;
+    display: inline;
+    border-radius: 8px;
+    margin: 1rem 0;
+    vertical-align: middle;
+}
+
 .page-body p {
     margin: 0.9rem 0;
     color: #c4c0b8;

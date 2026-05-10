@@ -461,6 +461,7 @@ Cross-reference engine:
 | **Headings** | Red `#e94560` color for h1/h2, lighter `#a0a0c0` for h3 |
 | **Strong text** | Gold `#ffd700` |
 | **Links** | Blue `#4fc3f7`, red hover `#e94560` |
+| **Images** | `max-width: 100%`, `height: auto`, `display: inline`, rounded corners — prevents overflow and keeps images inline with text |
 | **Code blocks** | Dark background `#0f3460` |
 | **Search form** | Dark input with red focus border, red submit button |
 | **Footer** | Dark background, centered, subtle text |
