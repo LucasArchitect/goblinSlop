@@ -13,6 +13,7 @@ pub struct ContentEntry {
     /// Comma-separated list of target slugs this article explicitly references (from JSON)
     pub references: String,
     pub is_dynamic: bool,
+    pub date_added: String, // ISO 8601 UTC
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -36,7 +37,8 @@ pub fn init_db(path: &str) -> SqlResult<Connection> {
             category TEXT NOT NULL DEFAULT 'general',
             tags TEXT NOT NULL DEFAULT '',
             \"references\" TEXT NOT NULL DEFAULT '',
-            is_dynamic INTEGER NOT NULL DEFAULT 0
+            is_dynamic INTEGER NOT NULL DEFAULT 0,
+            date_added TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z'
         );
 
         CREATE TABLE IF NOT EXISTS dynamic_pages (
@@ -54,13 +56,30 @@ pub fn init_db(path: &str) -> SqlResult<Connection> {
         );",
     )?;
 
+    // Migration: add date_added column if upgrading from older schema
+    // Check via PRAGMA table_info (reliable even with lazy compilation)
+    let has_date_added: bool = {
+        let mut stmt = conn.prepare("PRAGMA table_info(content)")?;
+        let columns: Vec<String> = stmt
+            .query_map([], |row| row.get::<_, String>(1))?
+            .filter_map(|r| r.ok())
+            .collect();
+        columns.iter().any(|c| c == "date_added")
+    };
+    if !has_date_added {
+        conn.execute_batch(
+            "ALTER TABLE content ADD COLUMN date_added TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z';",
+        )?;
+        println!("  ↻ Migrated schema: added date_added column to content table");
+    }
+
     Ok(conn)
 }
 
 pub fn insert_content(conn: &Connection, entry: &ContentEntry) -> SqlResult<()> {
     conn.execute(
-        "INSERT OR REPLACE INTO content (slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        "INSERT OR REPLACE INTO content (slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic, date_added)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         rusqlite::params![
             entry.slug,
             entry.title,
@@ -70,6 +89,7 @@ pub fn insert_content(conn: &Connection, entry: &ContentEntry) -> SqlResult<()> 
             entry.tags,
             entry.references,
             entry.is_dynamic as i32,
+            entry.date_added,
         ],
     )?;
     Ok(())
@@ -77,7 +97,7 @@ pub fn insert_content(conn: &Connection, entry: &ContentEntry) -> SqlResult<()> 
 
 pub fn get_content_by_slug(conn: &Connection, slug: &str) -> SqlResult<Option<ContentEntry>> {
     let mut stmt = conn.prepare(
-        "SELECT id, slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic
+        "SELECT id, slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic, date_added
          FROM content WHERE slug = ?1",
     )?;
 
@@ -92,6 +112,7 @@ pub fn get_content_by_slug(conn: &Connection, slug: &str) -> SqlResult<Option<Co
             tags: row.get(6)?,
             references: row.get(7)?,
             is_dynamic: row.get::<_, i32>(8)? != 0,
+            date_added: row.get(9)?,
         })
     })?;
 
@@ -101,10 +122,42 @@ pub fn get_content_by_slug(conn: &Connection, slug: &str) -> SqlResult<Option<Co
     }
 }
 
+pub fn get_content_paginated(conn: &Connection, page: u64, per_page: u64) -> SqlResult<Vec<ContentEntry>> {
+    let offset = (page.saturating_sub(1)) * per_page;
+    let mut stmt = conn.prepare(
+        "SELECT id, slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic, date_added
+         FROM content ORDER BY date_added DESC, id DESC
+         LIMIT ?1 OFFSET ?2",
+    )?;
+
+    let entries = stmt
+        .query_map(rusqlite::params![per_page, offset], |row| {
+            Ok(ContentEntry {
+                id: row.get(0)?,
+                slug: row.get(1)?,
+                title: row.get(2)?,
+                body_markdown: row.get(3)?,
+                body_html: row.get(4)?,
+                category: row.get(5)?,
+                tags: row.get(6)?,
+                references: row.get(7)?,
+                is_dynamic: row.get::<_, i32>(8)? != 0,
+                date_added: row.get(9)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(entries)
+}
+
+pub fn count_all_content(conn: &Connection) -> SqlResult<u64> {
+    conn.query_row("SELECT COUNT(*) FROM content", [], |row| row.get(0))
+}
+
 pub fn get_all_content(conn: &Connection) -> SqlResult<Vec<ContentEntry>> {
     let mut stmt = conn.prepare(
-        "SELECT id, slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic
-         FROM content ORDER BY id",
+        "SELECT id, slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic, date_added
+         FROM content ORDER BY date_added DESC, id DESC",
     )?;
 
     let entries = stmt
@@ -119,6 +172,7 @@ pub fn get_all_content(conn: &Connection) -> SqlResult<Vec<ContentEntry>> {
                 tags: row.get(6)?,
                 references: row.get(7)?,
                 is_dynamic: row.get::<_, i32>(8)? != 0,
+                date_added: row.get(9)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -129,10 +183,10 @@ pub fn get_all_content(conn: &Connection) -> SqlResult<Vec<ContentEntry>> {
 pub fn search_content(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEntry>> {
     let pattern = format!("%{}%", query);
     let mut stmt = conn.prepare(
-        "SELECT id, slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic
+        "SELECT id, slug, title, body_markdown, body_html, category, tags, \"references\", is_dynamic, date_added
          FROM content
          WHERE title LIKE ?1 OR body_markdown LIKE ?1 OR tags LIKE ?1
-         ORDER BY id",
+         ORDER BY date_added DESC, id DESC",
     )?;
 
     let entries = stmt
@@ -147,6 +201,7 @@ pub fn search_content(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEn
                 tags: row.get(6)?,
                 references: row.get(7)?,
                 is_dynamic: row.get::<_, i32>(8)? != 0,
+                date_added: row.get(9)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;

@@ -92,6 +92,7 @@ pub fn load_all_content(
                     tags,
                     references: references_str,
                     is_dynamic: json_entry.is_dynamic,
+                    date_added: json_entry.date_added.clone(),
                 };
 
                 match insert_content(&conn, &content_entry) {

@@ -144,6 +144,7 @@ goblinSlop/
 | `category` | TEXT | Category (lore, tricks, anime, pop_culture, ttrpg, games, etc.) |
 | `tags` | TEXT | Comma-separated tags (e.g., `goblin,lore`) |
 | `is_dynamic` | INTEGER | Boolean: 0 = static; 1 = dynamic |
+| `date_added` | TEXT | ISO 8601 UTC timestamp (e.g., `2026-05-09T17:33:37Z`) |
 
 **Table: `dynamic_pages`**
 | Column | Type | Description |
@@ -273,7 +274,7 @@ mod routes;
 
 | Struct | Fields | Purpose |
 |--------|--------|---------|
-| `ContentEntry` | `id, slug, title, body_markdown, body_html, category, tags, is_dynamic` | Represents a row in the `content` table. All fields public, implements `Debug`, `Serialize`, `Deserialize`, `Clone`. |
+| `ContentEntry` | `id, slug, title, body_markdown, body_html, category, tags, is_dynamic, date_added` | Represents a row in the `content` table. All fields public, implements `Debug`, `Serialize`, `Deserialize`, `Clone`. |
 | `DynamicPage` | `path, title, content, keywords` | Represents a cached dynamically-generated page. `keywords` is stored as comma-separated string in DB but loaded as `Vec<String>`. |
 
 **Functions:**
@@ -283,8 +284,10 @@ mod routes;
 | `init_db` | `(path: &str) -> SqlResult<Connection>` | Opens/creates SQLite file, executes CREATE TABLE IF NOT EXISTS for all three tables |
 | `insert_content` | `(conn: &Connection, entry: &ContentEntry) -> SqlResult<()>` | INSERT OR REPLACE into content table |
 | `get_content_by_slug` | `(conn: &Connection, slug: &str) -> SqlResult<Option<ContentEntry>>` | SELECT by slug, returns None if not found |
-| `get_all_content` | `(conn: &Connection) -> SqlResult<Vec<ContentEntry>>` | SELECT all content ordered by id |
-| `search_content` | `(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEntry>>` | LIKE search across title, body_markdown, and tags |
+| `get_all_content` | `(conn: &Connection) -> SqlResult<Vec<ContentEntry>>` | SELECT all content ordered by `date_added DESC, id DESC` |
+| `get_content_paginated` | `(conn: &Connection, page, per_page) -> SqlResult<Vec<ContentEntry>>` | Paginated SELECT with LIMIT/OFFSET, newest-first |
+| `count_all_content` | `(conn: &Connection) -> SqlResult<u64>` | COUNT(*) of all content entries |
+| `search_content` | `(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEntry>>` | LIKE search across title, body_markdown, tags, newest-first |
 | `insert_dynamic_page` | `(conn: &Connection, page: &DynamicPage) -> SqlResult<()>` | INSERT OR REPLACE into dynamic_pages table |
 | `get_dynamic_page` | `(conn: &Connection, path: &str) -> SqlResult<Option<DynamicPage>>` | SELECT by path, returns None if not found |
 
@@ -357,7 +360,7 @@ pub mod templates;
 
 | File | Route | Purpose |
 |------|-------|---------|
-| `home.rs` | `GET /` | Query all content, build list HTML, render as static page |
+| `home.rs` | `GET /` | Query content with pagination (`?page=N`), 20 per page, newest-first by `date_added` |
 | `sitemap.rs` | `GET /sitemap.xml` | XML sitemap listing home, search, all static content entries |
 | `search.rs` | `GET /search?q=` | If q present: search DB, show results. If not: show search form |
 | `raw.rs` | `GET /raw/:slug` | Return raw Markdown body as text/plain |
