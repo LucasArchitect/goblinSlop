@@ -141,15 +141,15 @@ mod tests {
 
     #[test]
     fn test_deserialize_single_content_unit() {
-        let test_file = std::path::PathBuf::from("data/content/goblin_lore.json");
-        assert!(test_file.exists(), "Test file data/content/goblin_lore.json must exist");
+        let test_file = std::path::PathBuf::from("data/content/goblin-lore.json");
+        assert!(test_file.exists(), "Test file data/content/goblin-lore.json must exist");
 
         let json_str = fs::read_to_string(&test_file).expect("Failed to read test file");
         let entry: JsonContentEntry = serde_json::from_str(&json_str)
-            .expect("Should deserialize goblin_lore.json into JsonContentEntry");
+            .expect("Should deserialize goblin-lore.json into JsonContentEntry");
 
         assert!(!entry.id.is_empty(), "id must not be empty");
-        assert_eq!(entry.slug, "goblin_lore", "slug should match filename stem");
+        assert_eq!(entry.slug, "goblin-lore", "slug should match filename stem");
         assert!(entry.title.starts_with("Goblin Lore"), "title should contain expected text");
         assert!(
             entry.body_markdown.starts_with("# Goblin Lore"),
