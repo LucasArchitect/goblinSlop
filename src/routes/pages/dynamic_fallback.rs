@@ -32,7 +32,7 @@ pub async fn dynamic_fallback(
         return Err((StatusCode::PERMANENT_REDIRECT, String::new()));
     }
 
-    // If slug contains underscore, redirect to canonical hyphen form
+    // If slug contains underscore, redirect to canonical hyphen form 
     if !is_canonical(&slug) {
         let canonical = normalize_slug(&slug);
         return Ok(Redirect::permanent(&format!("/{}", canonical)).into_response());
