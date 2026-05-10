@@ -3,6 +3,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect},
 };
 use axum::http::StatusCode;
+use rand::thread_rng;
 
 use crate::db;
 use super::super::generator::{generate_dynamic_page_content, parse_path_into_keywords};
@@ -54,6 +55,8 @@ pub async fn dynamic_fallback(
     };
 
     let dyn_page = generate_dynamic_page_content(&slug, &final_keywords);
-
-    Ok(Html(render_dynamic_page(&dyn_page, &format!("/{}", slug), &state.base_url)).into_response())
+    
+    // Pick random image from pool for dynamic/generate pages
+    let mut rng = thread_rng();
+    Ok(Html(render_dynamic_page(&dyn_page, &format!("/{}", slug), &state.base_url, &mut rng)).into_response())
 }
