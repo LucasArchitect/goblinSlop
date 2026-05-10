@@ -2,7 +2,7 @@
   "id": "magic-the-gathering-goblins",
   "title": "Magic: The Gathering - Goblins",
   "slug": "magic-the-gathering-goblins",
-  "body_markdown": "# Magic: The Gathering - Goblins\n\n\nGoblins are one of the most iconic creature types in Magic: The Gathering, appearing in every color but most famously in Red. MTG goblins are characterized by their reckless aggression, lack of self-preservation, and tendency to explode. They follow a tribal theme where individual goblins are weak but multiply and buff each other rapidly. Classic goblin cards include Goblin Guide (a cheap aggressive creature that defined burn decks), Goblin Rabblemaster (a modern goblin lord that creates tokens), Krenko, Mob Boss (an explosive commander that doubles goblin tokens), Siege-Gang Commander (which turns goblins into direct damage), and Muxus, Goblin Grandee (a legendary goblin from the D&D crossover set Adventures in the Forgotten Realms). The goblins of MTG span multiple planes: the goblins of Dominaria (Sliv-Mender, the squee goblins who cannot die), the goblins of Ravnica (the Izzet League and the Rakdos cult both employ goblins in dangerous experiments and shows), the goblins of Tarkir (cunning and tribal), and the goblins of Kaladesh (inventive and energetic). The phrase 'Goblins are Red' has become a meme in Magic culture—Red's philosophy of emotion, impulse, chaos, and destruction perfectly embodies goblin nature. The tribe has remained competitive in various formats for decades.",
+  "body_markdown": "# Magic: The Gathering - Goblins\n\n\nGoblins are one of the most iconic creature types in Magic: The Gathering, appearing in every color but most famously in Red. MTG goblins are characterized by their reckless aggression, lack of self-preservation, and tendency to explode. They follow a tribal theme where individual goblins are weak but multiply and buff each other rapidly. Classic goblin cards include Goblin Guide (a cheap aggressive creature that defined burn decks), Goblin Rabblemaster (a modern goblin lord that creates tokens), Krenko, Mob Boss (an explosive commander that doubles goblin tokens), Siege-Gang Commander (which turns goblins into direct damage), and Muxus, Goblin Grandee (a legendary goblin from the D&D crossover set Adventures in the Forgotten Realms). The goblins of MTG span multiple planes: the goblins of Dominaria (Sliv-Mender, the squee goblins who cannot die), the goblins of Ravnica (the Izzet League and the Rakdos cult both employ goblins in dangerous experiments and shows), the goblins of Tarkir (cunning and tribal), and the goblins of Kaladesh (inventive and energetic). The phrase 'Goblins are Red' has become a meme in Magic culture—Red's philosophy of emotion, impulse, chaos, and destruction perfectly embodies goblin nature. The tribe has remained competitive in various formats for decades.\n",
   "category": "games",
   "tags": [
     "goblin",
@@ -25,5 +25,6 @@
       "name": "Magic: The Gathering - Goblins",
       "url": "https://mtg.fandom.com/wiki/Goblin"
     }
-  ]
+  ],
+  "image": "magic-the-gathering-goblins.jpg"
 }
