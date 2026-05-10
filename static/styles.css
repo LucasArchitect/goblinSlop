@@ -527,6 +527,45 @@ body {
     color: #a8d8f0;
 }
 
+/* ── Sources section ────────────────────────────────── */
+.sources-section {
+    margin: 1.8rem 0;
+    padding: 1.2rem 1.5rem;
+    border-left: 3px solid #3a5a40;
+    background: rgba(20, 50, 30, 0.3);
+    border-radius: 0 10px 10px 0;
+}
+
+.sources-section h2 {
+    color: #8ab8a0;
+    font-size: 1.1rem;
+    margin-bottom: 0.6rem;
+}
+
+.sources-list {
+    list-style: none;
+    padding: 0;
+}
+
+.sources-list li {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(42, 80, 60, 0.5);
+}
+
+.sources-list li:last-child {
+    border-bottom: none;
+}
+
+.sources-list a {
+    color: #7eb8d0;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.sources-list a:hover {
+    color: #a8d8f0;
+}
+
 /* ── Footer ─────────────────────────────────────────── */
 .goblin-footer {
     text-align: center;

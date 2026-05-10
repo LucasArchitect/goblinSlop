@@ -2,7 +2,7 @@
   "id": "goblins-in-anime-overview",
   "title": "MyAnimeList - Goblins in Anime & Manga (General)",
   "slug": "goblins-in-anime-overview",
-  "body_markdown": "# MyAnimeList - Goblins in Anime & Manga (General)\n\n> Source: [MyAnimeList - Goblins in Anime & Manga (General)](https://myanimelist.net/anime.php?q=goblin&cat=anime)\n\nGoblins appear across a wide spectrum of anime and manga, from serious dark fantasy to comedy. Notable appearances include: Goblin Slayer (the most famous dark take on goblins); Overlord (goblins as summoned monsters, including the Goblin General empowered by a magic horn); Re:Monster (a protagonist reincarnated as a goblin who builds a goblin empire); That Time I Got Reincarnated as a Slime (goblins and hobgoblins as early allies); Rokka no Yuusha (goblins as part of the monster army); The Rising of the Shield Hero (goblins as early-level enemies that grow into a threat); DanMachi (goblins appear in the dungeon as low-level monsters); Grimgar of Fantasy and Ash (realistic depiction of goblins as dangerous creatures that new adventurers struggle to defeat); Goblin Is Very Strong (comedic take on goblin reincarnation); and many isekai series where goblins serve as introductory enemies. The portrayal of goblins in anime typically inherits from their Western fantasy roots\u2014small, green-skinned, crude, and often violent\u2014but Japanese media has added unique twists such as goblin reincarnation (tensei) stories and the 'cute goblin girl' subgenre.",
+  "body_markdown": "# MyAnimeList - Goblins in Anime & Manga (General)\n\n\nGoblins appear across a wide spectrum of anime and manga, from serious dark fantasy to comedy. Notable appearances include: Goblin Slayer (the most famous dark take on goblins); Overlord (goblins as summoned monsters, including the Goblin General empowered by a magic horn); Re:Monster (a protagonist reincarnated as a goblin who builds a goblin empire); That Time I Got Reincarnated as a Slime (goblins and hobgoblins as early allies); Rokka no Yuusha (goblins as part of the monster army); The Rising of the Shield Hero (goblins as early-level enemies that grow into a threat); DanMachi (goblins appear in the dungeon as low-level monsters); Grimgar of Fantasy and Ash (realistic depiction of goblins as dangerous creatures that new adventurers struggle to defeat); Goblin Is Very Strong (comedic take on goblin reincarnation); and many isekai series where goblins serve as introductory enemies. The portrayal of goblins in anime typically inherits from their Western fantasy roots—small, green-skinned, crude, and often violent—but Japanese media has added unique twists such as goblin reincarnation (tensei) stories and the 'cute goblin girl' subgenre.",
   "category": "anime",
   "tags": "goblin,anime,overview",
   "is_dynamic": false,
@@ -14,5 +14,11 @@
     "goblins-pop-culture-tropes",
     "goblins-in-visual-novels",
     "goblin-lore"
+  ],
+  "sources": [
+    {
+      "name": "MyAnimeList - Goblins in Anime & Manga (General)",
+      "url": "https://myanimelist.net/anime.php?q=goblin&cat=anime"
+    }
   ]
 }

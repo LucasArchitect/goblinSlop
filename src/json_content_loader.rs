@@ -1,11 +1,18 @@
 use crate::db::{init_db, insert_content, ContentEntry};
 use pulldown_cmark::{html, Parser};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
+/// A source reference: name + URL
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SourceRef {
+    pub name: String,
+    pub url: String,
+}
+
 /// Unified content entry — loaded from individual JSON files in data/content/
-/// Schema: { id, title, slug, body_markdown, category, tags, references, is_dynamic, date_added }
+/// Schema: { id, title, slug, body_markdown, category, tags, references, sources, is_dynamic, date_added }
 #[derive(Debug, Deserialize)]
 pub struct JsonContentEntry {
     pub id: String,
@@ -19,6 +26,9 @@ pub struct JsonContentEntry {
     /// Array of target slugs this article explicitly references
     #[serde(default)]
     pub references: Vec<String>,
+    /// Array of external sources [{name, url}]
+    #[serde(default)]
+    pub sources: Vec<SourceRef>,
     #[serde(default)]
     pub is_dynamic: bool,
     #[serde(default = "default_date_added")]
@@ -82,6 +92,8 @@ pub fn load_all_content(
                 // Join references array into comma-separated string for DB storage
                 let references_str = json_entry.references.join(",");
 
+                let sources_json = serde_json::to_string(&json_entry.sources).unwrap_or_else(|_| "[]".to_string());
+
                 let content_entry = ContentEntry {
                     id: 0,
                     slug: json_entry.slug.clone(),
@@ -91,6 +103,7 @@ pub fn load_all_content(
                     category: json_entry.category.clone(),
                     tags,
                     references: references_str,
+                    sources: sources_json,
                     is_dynamic: json_entry.is_dynamic,
                     date_added: json_entry.date_added.clone(),
                 };

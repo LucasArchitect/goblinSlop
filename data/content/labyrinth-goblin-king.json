@@ -2,7 +2,7 @@
   "id": "labyrinth-goblin-king",
   "title": "IMDb - Labyrinth (1986) - The Goblin King",
   "slug": "labyrinth-goblin-king",
-  "body_markdown": "# IMDb - Labyrinth (1986) - The Goblin King\n\n> Source: [IMDb - Labyrinth (1986) - The Goblin King](https://www.imdb.com/title/tt0091369/)\n\nLabyrinth (1986) is a musical fantasy film directed by Jim Henson and starring David Bowie as Jareth, the Goblin King. The story follows 16-year-old Sarah (Jennifer Connelly) who, in a moment of frustration, wishes that goblins would take away her baby brother Toby. The goblins\u2014depicted through Jim Henson's masterful puppetry\u2014swiftly obey, taking Toby to Jareth's castle in the center of a vast labyrinth. Sarah must navigate the maze of the Goblin Kingdom to rescue her brother before the clock strikes thirteen. Jareth himself is portrayed as a charismatic, androgynous, and manipulative ruler of the goblins, with shapeshifting powers and a magnetic presence. The goblins of Labyrinth are a diverse cast of bizarre, whimsical puppet creatures\u2014some helpful, some obstructive, all distinctly Henson-esque. The film's goblins are not evil in the traditional sense but are mischievous servants of the Goblin King, bound to do his bidding. Bowie's Jareth became an iconic figure in pop culture, and the film's unique blend of puppetry, fantasy, and music has made it a cult classic. The depiction of the Goblin King draws from European folklore where goblin kings rule over subterranean courts of mischievous spirits.",
+  "body_markdown": "# IMDb - Labyrinth (1986) - The Goblin King\n\n\nLabyrinth (1986) is a musical fantasy film directed by Jim Henson and starring David Bowie as Jareth, the Goblin King. The story follows 16-year-old Sarah (Jennifer Connelly) who, in a moment of frustration, wishes that goblins would take away her baby brother Toby. The goblins—depicted through Jim Henson's masterful puppetry—swiftly obey, taking Toby to Jareth's castle in the center of a vast labyrinth. Sarah must navigate the maze of the Goblin Kingdom to rescue her brother before the clock strikes thirteen. Jareth himself is portrayed as a charismatic, androgynous, and manipulative ruler of the goblins, with shapeshifting powers and a magnetic presence. The goblins of Labyrinth are a diverse cast of bizarre, whimsical puppet creatures—some helpful, some obstructive, all distinctly Henson-esque. The film's goblins are not evil in the traditional sense but are mischievous servants of the Goblin King, bound to do his bidding. Bowie's Jareth became an iconic figure in pop culture, and the film's unique blend of puppetry, fantasy, and music has made it a cult classic. The depiction of the Goblin King draws from European folklore where goblin kings rule over subterranean courts of mischievous spirits.",
   "category": "pop_culture",
   "tags": "goblin,movie,80s,david-bowie,fantasy",
   "is_dynamic": false,
@@ -14,5 +14,11 @@
     "green-goblin-hobgoblin",
     "goblin-lore",
     "discworld-goblins"
+  ],
+  "sources": [
+    {
+      "name": "IMDb - Labyrinth (1986) - The Goblin King",
+      "url": "https://www.imdb.com/title/tt0091369/"
+    }
   ]
 }

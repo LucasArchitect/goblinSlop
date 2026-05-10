@@ -136,7 +136,30 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
         .collect();
     html.push_str(&generate_references_html_thread_rng(&refs_keywords, Some(&entry.slug), &explicit_slugs));
 
+    // Sources section (external references like IMDb, MyAnimeList, etc.)
+    let sources_html = build_sources_html(&entry.sources);
+    html.push_str(&sources_html);
+
     html.push_str(BASE_HTML_FOOT);
+    html
+}
+
+fn build_sources_html(sources_json: &str) -> String {
+    let sources: Vec<serde_json::Value> = serde_json::from_str(sources_json).unwrap_or_default();
+    if sources.is_empty() {
+        return String::new();
+    }
+    let mut html = String::from("<section class='sources-section'><h2>Sources</h2><ul class='sources-list'>");
+    for src in &sources {
+        let name = src["name"].as_str().unwrap_or("Unknown");
+        let url = src["url"].as_str().unwrap_or("");
+        if url.is_empty() {
+            html.push_str(&format!("<li>{name}</li>"));
+        } else {
+            html.push_str(&format!("<li><a href='{url}' target='_blank' rel='noopener noreferrer'>{name}</a></li>"));
+        }
+    }
+    html.push_str("</ul></section>");
     html
 }
 

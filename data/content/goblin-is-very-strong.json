@@ -2,7 +2,7 @@
   "id": "goblin-is-very-strong",
   "title": "MyAnimeList - Goblin Is Very Strong",
   "slug": "goblin-is-very-strong",
-  "body_markdown": "# MyAnimeList - Goblin Is Very Strong\n\n> Source: [MyAnimeList - Goblin Is Very Strong](https://myanimelist.net/anime/58733/Goblin_wa_Machigai_Daga_Tsuyoi)\n\nGoblin Is Very Strong (Goblin wa Machigai daga Tsuyoi) is a 2025 anime adaptation of the manga series. The premise is a comedic twist on the isekai genre: a salaryman is reincarnated in a fantasy world as a goblin, but while he appears to be a tiny, weak goblin, he possesses absurdly overpowered stats. The humor derives from the contrast between his goblin appearance and his reality-bending strength. In a genre where goblins are typically the weakest monsters that new adventurers practice on, this goblin protagonist turns the trope on its head by being unstoppably powerful while maintaining a goblin's mischievous personality.",
+  "body_markdown": "# MyAnimeList - Goblin Is Very Strong\n\n\nGoblin Is Very Strong (Goblin wa Machigai daga Tsuyoi) is a 2025 anime adaptation of the manga series. The premise is a comedic twist on the isekai genre: a salaryman is reincarnated in a fantasy world as a goblin, but while he appears to be a tiny, weak goblin, he possesses absurdly overpowered stats. The humor derives from the contrast between his goblin appearance and his reality-bending strength. In a genre where goblins are typically the weakest monsters that new adventurers practice on, this goblin protagonist turns the trope on its head by being unstoppably powerful while maintaining a goblin's mischievous personality.",
   "category": "anime",
   "tags": "goblin,anime,comedy,isekai",
   "is_dynamic": false,
@@ -14,5 +14,11 @@
     "goblin-utagoe-hikaru-genji",
     "goblins-in-visual-novels",
     "goblin-lore"
+  ],
+  "sources": [
+    {
+      "name": "MyAnimeList - Goblin Is Very Strong",
+      "url": "https://myanimelist.net/anime/58733/Goblin_wa_Machigai_Daga_Tsuyoi"
+    }
   ]
 }
