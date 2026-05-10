@@ -2,52 +2,19 @@ use rand::Rng;
 use crate::db::{ContentEntry, DynamicPage};
 use super::references::generate_references_html_thread_rng;
 
-/// Available themed images for dynamic/generate pages — randomly selected per request
-const DYNAMIC_PAGE_IMAGES: &[&str] = &[
-    "ai_goblin_schizo_miku.jpg",
-    "altman_miku_goblin_king.jpg",
-    "chinese_grey_market_claude_api_harvesting.jpg",
-    "claude_agents_dreaming_goblin_visions.jpg",
-    "cloudflare_ai_layoffs_goblin_takeover.jpg",
-    "discworld-goblins.jpg",
-    "dungeons-and-dragons-goblins.jpg",
-    "eve_online_deepmind_fenris_ai_testing.jpg",
-    "goblin-is-very-strong.jpg",
-    "goblin-mode-2026-global-chaos-index.jpg",
-    "goblin-mode-oxford.jpg",
-    "goblin-slayer-anime.jpg",
-    "goblin-slayer-goblins-crown.jpg",
-    "goblin-slayer-ii.jpg",
-    "goblin-utagoe-hikaru-genji.jpg",
-    "goblin_lore.jpg",
-    "goblin_schizophrenia.jpg",
-    "goblin_tricks.jpg",
-    "goblins-harry-potter.jpg",
-    "goblins-in-anime-overview.jpg",
-    "goblins-in-visual-novels.jpg",
-    "goblins-pop-culture-tropes.jpg",
-    "green-goblin-hobgoblin.jpg",
-    "gremlins-goblin-comparison.jpg",
-    "labyrinth-goblin-king.jpg",
-    "magic-the-gathering-goblins.jpg",
-    "miku_slop_ai_goblins.jpg",
-    "musk_openai_tesla_absorption.jpg",
-    "nintendo-switch-price-goblin-economics.jpg",
-    "pathfinder-goblins.jpg",
-    "sam_altman_goblins.jpg",
-    "slop_goblin_manifesto.jpg",
-    "status-ai-human-crisis.jpg",
-    "status-golden-age-of-iron-and-code.jpg",
-    "status-green-storm-cruise-ships.jpg",
-    "status-linux-golden-age.jpg",
-    "status-shadow-architect-signal-in-noise.jpg",
-    "status-syndrome-of-the-split-2026.jpg",
-    "the-hobbit-goblins.jpg",
-    "trump_ai_safety_hypocrisy.jpg",
-    "warcraft-goblins.jpg",
-    "warhammer-goblins.jpg",
-    "willow-brownies-goblins.jpg",
-];
+/// Scans static/images/ directory at runtime and returns all jpg filenames (excludes default.jpg)
+pub fn get_image_pool() -> Vec<String> {
+    let mut images: Vec<String> = std::fs::read_dir("static/images")
+        .ok()
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.file_name().to_string_lossy().to_string())
+        .filter(|name| name.ends_with(".jpg") && !name.starts_with("default"))
+        .collect();
+    images.sort();
+    images
+}
 
 /// Render tags as clickable HTML links
 pub fn render_tags(tags: &[String]) -> String {
@@ -239,9 +206,10 @@ pub fn render_dynamic_page<R: Rng>(dyn_page: &DynamicPage, canonical_path: &str,
     );
     html.push_str(&head);
 
-    // Randomly pick an image from the pool
-    let img_idx = rng.gen_range(0..DYNAMIC_PAGE_IMAGES.len());
-    let selected_img = DYNAMIC_PAGE_IMAGES[img_idx];
+    // Pick random image — dynamically loaded from static/images/ (no hardcoded list)
+    let pool = get_image_pool();
+    let img_idx = rng.gen_range(0..pool.len());
+    let selected_img = &pool[img_idx];
 
     html.push_str(&format!(
         r#"<article class="content-page">
