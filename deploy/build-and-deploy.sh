@@ -59,6 +59,24 @@ APP_USER_HOME="/home/${APP_USER}"
 echo "Stopping service..."
 sudo systemctl stop goblinSlop 2>/dev/null || echo "  (not running)"
 
+echo "Killing stale processes on port 3000..."
+STALE_PID=$(sudo lsof -ti :3000 2>/dev/null || true)
+if [ -n "$STALE_PID" ]; then
+    echo "  Found stale process(es): $STALE_PID"
+    # Kill anything not managed by systemd
+    for pid in $STALE_PID; do
+        OWNER=$(ps -o uid= -p "$pid" 2>/dev/null | tr -d ' ')
+        if [ "$OWNER" != "$(id -u ${APP_USER})" ]; then
+            sudo kill -9 "$pid" 2>/dev/null || true
+            echo "  Killed non-service process $pid (uid=$OWNER)"
+        else
+            echo "  Skipping process $pid (managed by service user)"
+        fi
+    done
+else
+    echo "  No stale processes found."
+fi
+
 echo "Cleaning old files from ${APP_USER_HOME}..."
 sudo rm -rf "${APP_USER_HOME}/goblin_slop" \
             "${APP_USER_HOME}/static" \
@@ -71,6 +89,21 @@ echo "Extracting fresh archive to ${APP_USER_HOME}..."
 sudo tar xzf ~/goblinSlop-deploy.tar.gz -C "${APP_USER_HOME}/"
 sudo chown -R "${APP_USER}:${APP_USER}" "${APP_USER_HOME}/"
 sudo chmod +x "${APP_USER_HOME}/goblin_slop"
+
+# CRITICAL FIX: Ensure DB file has correct ownership
+# Bug: if goblin_slop.db exists from a previous deploy, it may be owned by root/goblin
+# This causes "attempt to write a readonly database" on service restart
+echo "Verifying DB ownership..."
+if [ -f "${APP_USER_HOME}/goblin_slop.db" ]; then
+    DB_OWNER=$(stat -c '%U:%G' "${APP_USER_HOME}/goblin_slop.db" 2>/dev/null || echo "unknown")
+    if [ "$DB_OWNER" != "${APP_USER}:${APP_USER}" ]; then
+        echo "  WARNING: DB owned by $DB_OWNER — fixing to ${APP_USER}:${APP_USER}"
+        sudo chown "${APP_USER}:${APP_USER}" "${APP_USER_HOME}/goblin_slop.db"
+    else
+        echo "  DB ownership OK."
+    fi
+fi
+
 rm -f ~/goblinSlop-deploy.tar.gz
 
 echo "Setting up systemd service..."
