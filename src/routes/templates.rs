@@ -102,6 +102,14 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
     html.push_str(&head);
 
     // Body
+    let img_file = entry.image.as_deref().unwrap_or("default.jpg");
+    let image_html = format!(
+        r#"<div class="article-image">
+            <img src="/static/images/{}" alt="{}" class="article-img">
+        </div>"#,
+        img_file, entry.title
+    );
+
     html.push_str(&format!(
         r#"<article class="content-page">
     <header class="page-header">
@@ -111,6 +119,7 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
             <span class="tags">Tags: {tags}</span>
         </div>
     </header>
+    {image}
     <div class="page-body">
         {body}
     </div>
@@ -118,6 +127,7 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
         title = entry.title,
         category = entry.category,
         tags = tags_str,
+        image = image_html,
         body = entry.body_html,
     ));
 
@@ -169,6 +179,9 @@ pub fn render_dynamic_page(dyn_page: &DynamicPage, canonical_path: &str, base_ur
     <header class="page-header">
         <h1>{title}</h1>
     </header>
+    <div class="article-image">
+        <img src="/static/images/default.jpg" alt="{title}" class="article-img">
+    </div>
     <div class="page-body">
         {content}
     </div>

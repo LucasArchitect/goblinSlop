@@ -24,6 +24,7 @@ pub struct ContentEntry {
     pub sources: Vec<SourceRef>,
     pub is_dynamic: bool,
     pub date_added: String,
+    pub image: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -58,7 +59,8 @@ pub fn init_db(path: &str) -> SqlResult<Connection> {
              body_html       TEXT NOT NULL,
              category        TEXT NOT NULL DEFAULT 'general',
              is_dynamic      INTEGER NOT NULL DEFAULT 0,
-             date_added      TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z'
+             date_added      TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z',
+             image           TEXT DEFAULT NULL
          );
 
          CREATE TABLE content_tags (
@@ -100,8 +102,8 @@ pub fn init_db(path: &str) -> SqlResult<Connection> {
 
 pub fn insert_content(conn: &Connection, entry: &ContentEntry) -> SqlResult<i64> {
     conn.execute(
-        "INSERT INTO content (slug, title, body_markdown, body_html, category, is_dynamic, date_added)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT INTO content (slug, title, body_markdown, body_html, category, is_dynamic, date_added, image)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         rusqlite::params![
             entry.slug,
             entry.title,
@@ -110,6 +112,7 @@ pub fn insert_content(conn: &Connection, entry: &ContentEntry) -> SqlResult<i64>
             entry.category,
             entry.is_dynamic as i32,
             entry.date_added,
+            entry.image,
         ],
     )?;
     let content_id = conn.last_insert_rowid();
@@ -179,6 +182,9 @@ fn load_sources(conn: &Connection, content_id: i64) -> SqlResult<Vec<SourceRef>>
 
 fn hydrate_row(conn: &Connection, row: &rusqlite::Row) -> SqlResult<ContentEntry> {
     let id: i64 = row.get(0)?;
+    let image_raw: Option<String> = row.get(8)?;
+    // Convert empty string to None for consistency
+    let image = image_raw.filter(|s| !s.is_empty());
     Ok(ContentEntry {
         id,
         slug: row.get(1)?,
@@ -191,11 +197,12 @@ fn hydrate_row(conn: &Connection, row: &rusqlite::Row) -> SqlResult<ContentEntry
         sources: load_sources(conn, id)?,
         is_dynamic: row.get::<_, i32>(6)? != 0,
         date_added: row.get(7)?,
+        image,
     })
 }
 
 const SELECT_CONTENT: &str =
-    "SELECT id, slug, title, body_markdown, body_html, category, is_dynamic, date_added FROM content";
+    "SELECT id, slug, title, body_markdown, body_html, category, is_dynamic, date_added, image FROM content";
 
 // ============================================================
 // Queries

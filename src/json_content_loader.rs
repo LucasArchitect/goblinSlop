@@ -5,7 +5,7 @@ use std::fs;
 use std::path::Path;
 
 /// Unified content entry — loaded from individual JSON files in data/content/
-/// Schema: { id, title, slug, body_markdown, category, tags, references, sources, is_dynamic, date_added }
+/// Schema: { id, title, slug, body_markdown, category, tags, references, sources, is_dynamic, date_added, image }
 /// All list fields (tags, references, sources) are JSON arrays.
 #[derive(Debug, Deserialize)]
 pub struct JsonContentEntry {
@@ -28,6 +28,9 @@ pub struct JsonContentEntry {
     pub is_dynamic: bool,
     #[serde(default = "default_date_added")]
     pub date_added: String,
+    /// Optional image filename (e.g. "default.jpg").
+    #[serde(default)]
+    pub image: Option<String>,
 }
 
 fn default_category() -> String {
@@ -92,6 +95,7 @@ pub fn load_all_content(
                     sources: json_entry.sources,
                     is_dynamic: json_entry.is_dynamic,
                     date_added: json_entry.date_added.clone(),
+                    image: json_entry.image.clone(),
                 };
 
                 match insert_content(&conn, &content_entry) {

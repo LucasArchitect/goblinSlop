@@ -144,6 +144,7 @@ goblinSlop/
 | `category` | TEXT | Category (lore, tricks, anime, pop_culture, etc.) |
 | `is_dynamic` | INTEGER | Boolean: 0 = static; 1 = dynamic |
 | `date_added` | TEXT | ISO 8601 UTC timestamp (e.g., `2026-05-09T17:33:37Z`) |
+| `image` | TEXT | Image filename (e.g., `default.jpg`). `NULL` if not set. Displayed as small inline thumbnail at top of article and on preview cards. |
 
 **Table: `content_tags`** — Tags (one row per tag per article)
 | Column | Type | Description |
@@ -293,7 +294,7 @@ mod routes;
 | Struct | Fields | Purpose |
 |--------|--------|---------|
 | `SourceRef` | `name, url` | Represents one external source. Stored in `content_sources` table. |
-| `ContentEntry` | `id, slug, title, body_markdown, body_html, category, tags: Vec<String>, references: Vec<String>, sources: Vec<SourceRef>, is_dynamic, date_added` | Represents a content article with all related data from normalized tables. |
+| `ContentEntry` | `id, slug, title, body_markdown, body_html, category, tags: Vec<String>, references: Vec<String>, sources: Vec<SourceRef>, is_dynamic, date_added, image` | Represents a content article with all related data from normalized tables. |
 | `DynamicPage` | `path, title, content, keywords` | Represents a cached dynamically-generated page. |
 
 **Functions:**
@@ -327,6 +328,7 @@ pub struct JsonContentEntry {
     pub sources: Vec<SourceRef>, // external sources [{name, url}]
     pub is_dynamic: bool,
     pub date_added: String,      // ISO 8601 UTC, default: "1970-01-01T00:00:00Z"
+    pub image: Option<String>,   // Image filename (e.g., Some("default.jpg")), None if not set
 }
 ```
 
@@ -461,7 +463,9 @@ Cross-reference engine:
 | **Headings** | Red `#e94560` color for h1/h2, lighter `#a0a0c0` for h3 |
 | **Strong text** | Gold `#ffd700` |
 | **Links** | Blue `#4fc3f7`, red hover `#e94560` |
-| **Images** | `max-width: 100%`, `height: auto`, `display: inline`, rounded corners — prevents overflow and keeps images inline with text |
+| **Images (page body)** | `max-width: 100%`, `height: auto`, `display: inline`, rounded corners — prevents overflow and keeps images inline with text |
+| **Article image** | `.article-img`: `max-width: 200px`, centered, small inline thumbnail at top of article |
+| **Card image** | `.card-img`: `max-height: 120px`, centered, thumbnail on home page preview cards |
 | **Code blocks** | Dark background `#0f3460` |
 | **Search form** | Dark input with red focus border, red submit button |
 | **Footer** | Dark background, centered, subtle text |
