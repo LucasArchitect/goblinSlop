@@ -1,6 +1,6 @@
 # 🧌 GoblinSlop — Comprehensive Agent Documentation
 
-> **Version**: 0.1.0 (unified content)  
+> **Version**: 0.1.1 (tagged & categorized)  
 > **Language**: Rust (edition 2024)  
 > **Framework**: Axum 0.7  
 > **Database**: SQLite (rusqlite 0.32 bundled)  
@@ -18,7 +18,7 @@
    - [5.1 `Cargo.toml` — Dependencies](#51-cargotoml--dependencies)
    - [5.2 `src/config.rs` — Configuration Module](#52-srcconfigrs--configuration-module)
    - [5.3 `src/main.rs` — Server Entrypoint](#53-srcmainrs--server-entrypoint)
-   - [5.4 `src/db.rs` — Database Layer](#54-srcdbrs--database-layer)
+   - [5.4 `src/db/` — Database Module Directory](#54-srcdb--database-module-directory)
    - [5.5 `src/json_content_loader.rs` — Unified JSON Content Loader](#55-srcjson_content_loaderrs--unified-json-content-loader)
    - [5.6 `src/routes/` — Route Handlers Module Directory](#56-srcroutes--route-handlers-module-directory)
    - [5.7 `static/styles.css` — Styling](#57-staticstylescss--styling)
@@ -108,16 +108,21 @@ goblinSlop/
 ├── src/                         # Rust source code
 │   ├── config.rs                #   Configuration from environment variables
 │   ├── main.rs                  #   Server entrypoint, startup logic
-│   ├── db.rs                    #   SQLite schema, CRUD operations
+│   ├── db/                      #   Database module directory
+│   │   ├── mod.rs               #     Re-exports all submodules
+│   │   ├── types.rs             #     ContentEntry, DynamicPage, SourceRef structs
+│   │   ├── schema.rs            #     init_db(), table creation, indexes
+│   │   ├── insert.rs            #     insert_content()
+│   │   └── queries.rs           #     All query functions (search, pagination, tags, categories)
 │   ├── json_content_loader.rs   #   Unified JSON content loader (single source)
 │   └── routes/                  #   Route handlers module directory
 │       ├── mod.rs               #     Module declaration, AppState, create_router()
 │       ├── handlers.rs          #     Shared `ApiResponse` type
-│       ├── pages/               #     One file per route handler (9 files)
-│       ├── templates.rs         #     HTML template rendering functions
+│       ├── templates.rs         #     HTML template rendering + tag/category link helpers
 │       ├── content_templates.rs #     Text templates (titles, intros, bodies, verdicts)
 │       ├── references.rs        #     Real & randomly-generated fake page references
-│       └── generator.rs         #     Coordinator: assembles dynamic page from above
+│       ├── generator.rs         #     Coordinator: assembles dynamic page from above
+│       └── pages/               #     One file per route handler (11 files)
 ├── static/                      # Static files served at /static/
 │   ├── styles.css               #   Goblin-themed dark CSS
 │   └── robots.txt               #   SEO/crawler instructions
@@ -287,9 +292,19 @@ mod routes;
 
 **Error handling**: If DB init fails, the program panics. If content loading fails, it prints a warning but continues.
 
-### 5.4 `src/db.rs` — Database Layer
+### 5.4 `src/db/` — Database Module Directory
 
-**Structs:**
+The database layer is split into 5 files:
+
+| File | Purpose |
+|------|---------|
+| `mod.rs` | Re-exports all submodules |
+| `types.rs` | `ContentEntry`, `DynamicPage`, `SourceRef` structs |
+| `schema.rs` | `init_db()`, table creation, indexes |
+| `insert.rs` | `insert_content()` |
+| `queries.rs` | All query functions |
+
+**Structs** (in `types.rs`):
 
 | Struct | Fields | Purpose |
 |--------|--------|---------|
@@ -297,17 +312,26 @@ mod routes;
 | `ContentEntry` | `id, slug, title, body_markdown, body_html, category, tags: Vec<String>, references: Vec<String>, sources: Vec<SourceRef>, is_dynamic, date_added, image` | Represents a content article with all related data from normalized tables. |
 | `DynamicPage` | `path, title, content, keywords` | Represents a cached dynamically-generated page. |
 
-**Functions:**
+**Indexes** (in `schema.rs`):
+- `idx_content_slug` on `content(slug)`
+- `idx_content_tags_tag` on `content_tags(tag)`
+- `idx_content_tags_content_id` on `content_tags(content_id)`
+- `idx_content_categories_category` on `content_categories(category)`
+- `idx_content_categories_content_id` on `content_categories(content_id)`
+
+**Functions** (in `queries.rs`):
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `init_db` | `(path: &str) -> SqlResult<Connection>` | Drops old tables, creates fresh normalized schema |
-| `insert_content` | `(conn: &Connection, entry: &ContentEntry) -> SqlResult<i64>` | Inserts article + related tags/references/sources into normalized tables |
 | `get_content_by_slug` | `(conn: &Connection, slug: &str) -> SqlResult<Option<ContentEntry>>` | SELECT by slug, hydrates all related data from normalized tables |
 | `get_content_paginated` | `(conn: &Connection, page, per_page) -> SqlResult<Vec<ContentEntry>>` | Paginated SELECT with LIMIT/OFFSET, newest-first |
 | `count_all_content` | `(conn: &Connection) -> SqlResult<u64>` | COUNT(*) of all content entries |
 | `get_all_content` | `(conn: &Connection) -> SqlResult<Vec<ContentEntry>>` | SELECT all content, newest-first |
 | `search_content` | `(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEntry>>` | LIKE search across title, body, tags (including tag table) |
+| `get_content_by_tag` | `(conn: &Connection, tag: &str) -> SqlResult<Vec<ContentEntry>>` | All articles with a given tag |
+| `get_content_by_category` | `(conn: &Connection, category: &str) -> SqlResult<Vec<ContentEntry>>` | All articles in a given category |
+| `get_all_tags` | `(conn: &Connection) -> SqlResult<Vec<(String, u64)>>` | All tags with article counts |
+| `get_all_categories` | `(conn: &Connection) -> SqlResult<Vec<(String, u64)>>` | All categories with article counts |
 | `insert_dynamic_page` | `(conn: &Connection, page: &DynamicPage) -> SqlResult<()>` | INSERT OR REPLACE into dynamic_pages table |
 | `get_dynamic_page` | `(conn: &Connection, path: &str) -> SqlResult<Option<DynamicPage>>` | SELECT by path, returns None if not found |
 
@@ -385,9 +409,11 @@ pub mod templates;
 
 | File | Route | Purpose |
 |------|-------|---------|
-| `home.rs` | `GET /` | Query content with pagination (`?page=N`), 20 per page, newest-first by `date_added` |
+| `home.rs` | `GET /` | Query content with pagination (`?page=N`), 12 per page, newest-first by `date_added` |
 | `sitemap.rs` | `GET /sitemap.xml` | XML sitemap listing home, search, all static content entries |
 | `search.rs` | `GET /search?q=` | If q present: search DB, show results. If not: show search form |
+| `tag.rs` | `GET /tag/:name` | List all articles with a given tag |
+| `category.rs` | `GET /category/:name` | List all articles in a given category |
 | `raw.rs` | `GET /raw/:slug` | Return raw Markdown body as text/plain |
 | `dynamic_fallback.rs` | `GET /*` | Underscores → 301 redirect, else check static or generate deterministic dynamic page |
 | `api_content.rs` | `GET /api/content/:slug` | Return single ContentEntry as JSON |
@@ -546,8 +572,7 @@ All dynamic pages appear identical to static pages — no badges, notes, or indi
 
 ### Unit Tests
 
-Located in `src/json_content_loader.rs` and `src/routes/generator.rs`:
-
+Tests are located in `src/json_content_loader.rs`, `src/routes/generator.rs`, and `src/db/queries.rs`:
 
 **`test_deserialize_single_content_unit`** — Loads one actual JSON file, deserializes into `JsonContentEntry`, verifies all fields: id, slug, title, tags (array), references (array), date_added (ISO 8601), is_dynamic.
 
@@ -557,14 +582,24 @@ Located in `src/json_content_loader.rs` and `src/routes/generator.rs`:
 
 **`test_different_paths_produce_different_content`** — Generates dynamic content from two different paths and asserts outputs differ.
 
+**`test_search_content_empty_query_returns_all`** — Empty search query returns all content.
+
+**`test_search_content_matches_title`** — Search matches article titles.
+
+**`test_search_content_matches_tag`** — Search matches tags via the `content_tags` table.
+
+**`test_get_content_by_slug_not_found`** — Non-existent slug returns `None`.
+
+**`test_get_content_by_tag_returns_matching_articles`** — Tag query returns only articles with that tag.
+
+**`test_get_content_by_tag_returns_none_for_unused_tag`** — Unused tag returns empty vec.
+
+**`test_get_content_by_category_returns_matching_articles`** — Category query returns only articles in that category.
+
 ```bash
-cargo test --release
-# running 4 tests
-# test json_content_loader::tests::test_deserialize_single_content_unit ... ok
-# test routes::generator::tests::test_different_paths_produce_different_content ... ok
-# test routes::generator::tests::test_generated_content_is_deterministic ... ok
-# test json_content_loader::tests::test_load_and_read_entry_with_all_fields ... ok
-# test result: ok. 4 passed; 0 failed; 0 ignored
+cargo test
+# running 15 tests
+# test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
 ```
 
 ---
@@ -575,16 +610,24 @@ cargo test --release
 
 The `deploy/build-and-deploy.sh` script:
 1. Runs `cargo build --release`
-2. SCP's the binary to the VPS
-3. SSH's into the VPS and restarts the systemd service
+2. Packages binary + `static/` + `data/` + templated systemd service into a tarball
+3. SCPs the tarball to the VPS
+4. SSH's into the VPS and runs a **clean deploy**:
+   - Stops the running service
+   - Removes ALL old files from `APP_USER_HOME` (binary, static/, data/, content/, .db, .service)
+   - Extracts fresh archive
+   - Sets ownership with `chown -R`
+   - Installs/updates systemd service
+   - Starts service
+   - Verifies with `systemctl is-active` and HTTP 200 check
 
 ### Environment Variables (Deployment)
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DEPLOY_USER` | Remote SSH user | `goblin` |
-| `DEPLOY_HOST` | VPS hostname/IP | `goblin.geno.su` |
-| `APP_USER` | Systemd service user | `goblin` |
+| `DEPLOY_USER` | Remote SSH user | `azu` |
+| `DEPLOY_HOST` | VPS hostname/IP | `144.31.17.0` |
+| `APP_USER` | Systemd service user | `goblinslop` |
 
 ---
 

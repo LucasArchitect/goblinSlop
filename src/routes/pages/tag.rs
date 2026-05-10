@@ -1,30 +1,58 @@
 use axum::{
-    extract::{Query, State},
+    extract::{Path, State},
     response::{Html, IntoResponse},
 };
-use serde::Deserialize;
 use axum::http::StatusCode;
 
 use crate::db;
 use super::super::templates::{render_static_page, render_tags, render_category};
 use super::super::AppState;
 
-#[derive(Deserialize)]
-pub struct SearchQuery {
-    pub q: Option<String>,
+/// Strip leading Markdown heading markers and return first ~240 chars of plain-ish text.
+fn make_preview(markdown: &str) -> String {
+    let body = markdown
+        .lines()
+        .find(|l| {
+            let trimmed = l.trim();
+            !trimmed.starts_with('#')
+                && !trimmed.starts_with("---")
+                && !trimmed.is_empty()
+        })
+        .unwrap_or("");
+    let body = body.trim();
+    let body = body
+        .replace("**", "")
+        .replace("__", "")
+        .replace("~~", "")
+        .replace("*", "")
+        .replace("`", "");
+    if body.len() > 240 {
+        format!("{}…", &body[..237])
+    } else {
+        body.to_string()
+    }
 }
 
-pub async fn search_page(
+pub async fn tag_page(
     State(state): State<AppState>,
-    Query(params): Query<SearchQuery>,
+    Path(tag): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let db = state.db.lock().unwrap();
 
-    let body = if let Some(query) = &params.q {
-        let results = db::search_content(&db, query).unwrap_or_default();
-        let mut list_html = format!("<p>Search results for <strong>{}</strong>: {} found.</p>", query, results.len());
-        list_html.push_str("<div class='article-grid'>");
-        for entry in &results {
+    let entries = db::get_content_by_tag(&db, &tag).unwrap_or_default();
+    let count = entries.len();
+
+    let mut body = format!(
+        "<h2>Articles tagged: <span class='tag-link'>{}</span></h2>",
+        tag,
+    );
+
+    if count == 0 {
+        body.push_str("<p>No articles found with this tag.</p>");
+    } else {
+        body.push_str(&format!("<p>{} article{} found.</p>", count, if count == 1 { "" } else { "s" }));
+        body.push_str("<div class='article-grid'>");
+        for entry in &entries {
             let date_str = if entry.date_added.len() >= 10 {
                 &entry.date_added[..10]
             } else {
@@ -33,8 +61,9 @@ pub async fn search_page(
             let img_file = entry.image.as_deref().unwrap_or("default.jpg");
             let tag_links = render_tags(&entry.tags);
             let cat_link = render_category(&entry.category);
+            let preview = make_preview(&entry.body_markdown);
 
-            list_html.push_str(&format!(
+            body.push_str(&format!(
                 r#"<div class='article-card'>
                     <div class='card-top'>
                         <div class='card-image'>
@@ -48,6 +77,7 @@ pub async fn search_page(
                             </div>
                         </div>
                     </div>
+                    <p class='card-preview'>{}</p>
                     <div class='card-footer'>
                         <span class='card-tags'>{}</span>
                     </div>
@@ -58,28 +88,19 @@ pub async fn search_page(
                 entry.title,
                 date_str,
                 cat_link,
+                preview,
                 tag_links,
             ));
         }
-        list_html.push_str("</div>");
-        list_html
-    } else {
-        format!(
-            r#"<form action='/search' method='GET' class='search-form'>
-                <input type='text' name='q' placeholder='Search goblin knowledge...'>
-                <button type='submit'>🔍 Search</button>
-            </form>
-            <p>Try searching for: <a href='/search?q=goblin'>goblin</a>, <a href='/search?q=sam'>sam</a>, <a href='/search?q=trick'>trick</a>, <a href='/search?q=schizophrenia'>schizophrenia</a></p>
-            <p>Or explore any hidden goblin path!</p>"#
-        )
-    };
+        body.push_str("</div>");
+    }
 
     Ok(Html(render_static_page(
-        "Search GoblinSlop",
+        &format!("Tag: {} - GoblinSlop", tag),
         &body,
-        "search",
-        "search",
-        "/search",
+        "tag",
+        &tag,
+        &format!("/tag/{}", tag),
         &state.base_url,
     )))
 }

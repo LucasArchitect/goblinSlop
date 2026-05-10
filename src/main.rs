@@ -15,14 +15,17 @@ async fn main() {
 
     println!("🧌 GoblinSlop starting with config: {:?}", cfg);
 
-    // Initialize database
-    let conn = db::init_db(&cfg.db_path).expect("Failed to initialize database");
+    // Initialize in-memory database, filled from scratch at every run
+    let conn = db::init_db(":memory:").expect("Failed to initialize in-memory database");
     let db = Arc::new(std::sync::Mutex::new(conn));
 
     // Load all unified JSON content into database (single source of truth)
     println!("Loading content from unified JSON files...");
-    if let Err(e) = json_content_loader::load_all_content(&cfg.db_path, &cfg.content_dir) {
-        eprintln!("Warning: Could not load all content: {}", e);
+    {
+        let conn = db.lock().unwrap();
+        if let Err(e) = json_content_loader::load_all_content_into_conn(&conn, &cfg.content_dir) {
+            eprintln!("Warning: Could not load all content: {}", e);
+        }
     }
 
     // Build application state

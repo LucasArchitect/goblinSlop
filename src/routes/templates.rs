@@ -1,6 +1,19 @@
 use crate::db::{ContentEntry, DynamicPage};
 use super::references::generate_references_html_thread_rng;
 
+/// Render tags as clickable HTML links
+pub fn render_tags(tags: &[String]) -> String {
+    tags.iter()
+        .map(|t| format!("<a href='/tag/{}' class='tag-link'>{}</a>", t, t))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Render a category as a clickable HTML link
+pub fn render_category(category: &str) -> String {
+    format!("<a href='/category/{}' class='category-link'>{}</a>", category, category)
+}
+
 // ============================================================
 // HTML Template Constants
 // ============================================================
@@ -110,6 +123,9 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
         img_file, entry.title
     );
 
+    let cat_link = render_category(&entry.category);
+    let tag_links = render_tags(&entry.tags);
+
     html.push_str(&format!(
         r#"<article class="content-page">
     <header class="page-header">
@@ -125,8 +141,8 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
     </div>
 </article>"#,
         title = entry.title,
-        category = entry.category,
-        tags = tags_str,
+        category = cat_link,
+        tags = tag_links,
         image = image_html,
         body = entry.body_html,
     ));

@@ -46,11 +46,21 @@ fn default_date_added() -> String {
 }
 
 /// Loads all individual JSON content files from `data/content/` into the database.
+#[allow(dead_code)]
 pub fn load_all_content(
     db_path: &str,
     content_dir: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let conn = init_db(db_path)?;
+    load_all_content_into_conn(&conn, content_dir)?;
+    Ok(())
+}
+
+/// Load all content into an existing database connection (supports :memory:).
+pub fn load_all_content_into_conn(
+    conn: &rusqlite::Connection,
+    content_dir: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let content_path = Path::new(content_dir);
 
     if !content_path.exists() {
@@ -98,7 +108,7 @@ pub fn load_all_content(
                     image: json_entry.image.clone(),
                 };
 
-                match insert_content(&conn, &content_entry) {
+                match insert_content(conn, &content_entry) {
                     Ok(_) => println!(
                         "  ✅ Loaded content: {} (slug: {}, date_added: {}, refs: {} entries)",
                         content_entry.title,
@@ -167,15 +177,12 @@ mod tests {
     #[test]
     fn test_load_and_read_entry_with_all_fields() {
         use crate::db::get_content_by_slug;
-        use rusqlite::Connection;
+        use crate::db::schema::init_db;
 
-        let db_path = "test_load_entry.db";
+        let conn = init_db(":memory:").expect("init in-memory db");
+        load_all_content_into_conn(&conn, "data/content").expect("load_all_content should succeed");
+
         let test_slug = "goblin-slayer-anime";
-
-        let _ = std::fs::remove_file(db_path);
-        load_all_content(db_path, "data/content").expect("load_all_content should succeed");
-        let conn = Connection::open(db_path).expect("open db should succeed");
-
         let entry = get_content_by_slug(&conn, test_slug)
             .expect("query should succeed")
             .expect("entry must exist");
@@ -213,6 +220,6 @@ mod tests {
             "✅ test_load_and_read_entry_with_all_fields passed for {test_slug}"
         );
 
-        let _ = std::fs::remove_file(db_path);
+        // Connection closes automatically — no file cleanup needed
     }
 }

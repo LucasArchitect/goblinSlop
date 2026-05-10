@@ -37,10 +37,7 @@ mkdir -p "$DEPLOY_DIR"
 
 cp target/release/goblin_slop "$DEPLOY_DIR/"
 cp -r static "$DEPLOY_DIR/"
-# content/ directory removed — all content migrated to data/content/*.json
-if [ -d "content" ]; then cp -r content "$DEPLOY_DIR/"; fi
 cp -r data "$DEPLOY_DIR/"
-# .db excluded — rebuilt fresh on each deploy from content/*.md + data/scraped_content.json
 sed "s/__APP_USER__/${APP_USER}/g" deploy/goblinSlop.service > "$DEPLOY_DIR/goblinSlop.service"
 
 tar czf goblinSlop-deploy.tar.gz -C "$DEPLOY_DIR" .
@@ -52,16 +49,27 @@ echo "=== Uploading to ${REMOTE} ==="
 scp goblinSlop-deploy.tar.gz "${REMOTE}:~/"
 rm -f goblinSlop-deploy.tar.gz
 
-# Step 4: Remote deploy — extract to APP_USER home, install/restart service
+# Step 4: Remote deploy — clean, extract, restart
 echo "=== Running remote deployment ==="
 ssh "${REMOTE}" APP_USER="${APP_USER}" bash << 'REMOTEEOF'
 set -e
 
 APP_USER_HOME="/home/${APP_USER}"
 
-echo "Extracting archive to ${APP_USER_HOME}..."
+echo "Stopping service..."
+sudo systemctl stop goblinSlop 2>/dev/null || echo "  (not running)"
+
+echo "Cleaning old files from ${APP_USER_HOME}..."
+sudo rm -rf "${APP_USER_HOME}/goblin_slop" \
+            "${APP_USER_HOME}/static" \
+            "${APP_USER_HOME}/data" \
+            "${APP_USER_HOME}/content" \
+            "${APP_USER_HOME}/goblin_slop.db" \
+            "${APP_USER_HOME}/goblinSlop.service"
+
+echo "Extracting fresh archive to ${APP_USER_HOME}..."
 sudo tar xzf ~/goblinSlop-deploy.tar.gz -C "${APP_USER_HOME}/"
-sudo chown -R "${APP_USER}:${APP_USER}" "${APP_USER_HOME}/static" "${APP_USER_HOME}/content" "${APP_USER_HOME}/data" "${APP_USER_HOME}/goblin_slop" "${APP_USER_HOME}/goblin_slop.db" 2>/dev/null || true
+sudo chown -R "${APP_USER}:${APP_USER}" "${APP_USER_HOME}/"
 sudo chmod +x "${APP_USER_HOME}/goblin_slop"
 rm -f ~/goblinSlop-deploy.tar.gz
 
@@ -77,14 +85,15 @@ else
     echo "Service updated."
 fi
 
-echo "Restarting service..."
-sudo systemctl restart goblinSlop
+echo "Starting service..."
+sudo systemctl start goblinSlop
 
 sleep 3
 
 echo ""
 echo "=== Verification ==="
-systemctl status goblinSlop --no-pager | head -20
+systemctl is-active goblinSlop
+systemctl status goblinSlop --no-pager | head -15
 echo ""
 echo -n "Backend (port 3000): "
 curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000/ || echo "FAILED"

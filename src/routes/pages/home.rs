@@ -6,7 +6,7 @@ use serde::Deserialize;
 use axum::http::StatusCode;
 
 use crate::db;
-use super::super::templates::render_static_page;
+use super::super::templates::{render_static_page, render_tags, render_category};
 use super::super::AppState;
 
 const PER_PAGE: u64 = 12;
@@ -60,21 +60,21 @@ pub async fn home_page(
             &entry.date_added
         };
         let preview = make_preview(&entry.body_markdown);
-        let tag_str = entry.tags.join(" · ");
-
         let img_file = entry.image.as_deref().unwrap_or("default.jpg");
+        let tag_links = render_tags(&entry.tags);
+        let cat_link = render_category(&entry.category);
 
         cards_html.push_str(&format!(
-            r#"<a href='/{}' class='article-card'>
+            r#"<div class='article-card'>
                 <div class='card-top'>
                     <div class='card-image'>
                         <img src="/static/images/{}" alt="{}" class="card-img">
                     </div>
                     <div class='card-top-right'>
-                        <h3 class='card-title'>{}</h3>
+                        <a href='/{}' class='card-title-link'><h3 class='card-title'>{}</h3></a>
                         <div class='card-header'>
                             <span class='card-date'>{}</span>
-                            <span class='category-badge'>{}</span>
+                            {}
                         </div>
                     </div>
                 </div>
@@ -82,15 +82,15 @@ pub async fn home_page(
                 <div class='card-footer'>
                     <span class='card-tags'>{}</span>
                 </div>
-            </a>"#,
-            entry.slug,
+            </div>"#,
             img_file,
             entry.title,
+            entry.slug,
             entry.title,
             date_str,
-            entry.category,
+            cat_link,
             preview,
-            tag_str,
+            tag_links,
         ));
     }
     cards_html.push_str("</div>");

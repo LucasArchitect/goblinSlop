@@ -115,6 +115,39 @@ body {
     color: #8a8aa8;
 }
 
+.tag-link {
+    display: inline-block;
+    background: rgba(126, 184, 208, 0.12);
+    color: #7eb8d0;
+    padding: 0.08rem 0.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.82rem;
+    transition: all 0.2s ease;
+    margin: 0.05rem 0;
+}
+
+.tag-link:hover {
+    background: rgba(126, 184, 208, 0.25);
+    color: #a8d8f0;
+}
+
+.category-link {
+    display: inline-block;
+    background: rgba(200, 168, 122, 0.12);
+    color: #c8a87a;
+    padding: 0.08rem 0.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.82rem;
+    transition: all 0.2s ease;
+}
+
+.category-link:hover {
+    background: rgba(200, 168, 122, 0.25);
+    color: #d4b88a;
+}
+
 .dynamic-badge {
     background: rgba(200, 168, 122, 0.15);
     color: #c8a87a;
@@ -178,8 +211,6 @@ body {
     border: 1px solid #2a2a50;
     border-radius: 12px;
     padding: 1.25rem;
-    text-decoration: none;
-    color: inherit;
     transition: all 0.25s ease;
     position: relative;
     overflow: hidden;
@@ -206,6 +237,22 @@ body {
 
 .article-card:hover::before {
     opacity: 1;
+}
+
+/* Title link inside article cards (replaces whole-card link) */
+.card-title-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    border-bottom: none !important;
+}
+
+.card-title-link:hover .card-title {
+    color: #d4b88a;
+}
+
+.card-title-link:hover {
+    border-bottom: none !important;
 }
 
 .card-header {

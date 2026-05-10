@@ -16,11 +16,13 @@ use pages::{
     api_content::api_content,
     api_dynamic::api_dynamic,
     api_search::api_search,
+    category::category_page,
     dynamic_fallback::dynamic_fallback,
     home::home_page,
     raw::raw_content,
     search::search_page,
     sitemap::sitemap,
+    tag::tag_page,
 };
 
 #[derive(Clone)]
@@ -34,6 +36,8 @@ pub fn create_router(state: AppState) -> Router {
         .route("/", get(home_page))
         .route("/search", get(search_page))
         .route("/raw/:slug", get(raw_content))
+        .route("/tag/:tag", get(tag_page))
+        .route("/category/:category", get(category_page))
         .route("/api/content/:slug", get(api_content))
         .route("/api/dynamic/*path", get(api_dynamic))
         .route("/api/search", get(api_search))
