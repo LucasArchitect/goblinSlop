@@ -119,8 +119,8 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
             <span class="tags">Tags: {tags}</span>
         </div>
     </header>
-    {image}
     <div class="page-body">
+        {image}
         {body}
     </div>
 </article>"#,
@@ -179,10 +179,10 @@ pub fn render_dynamic_page(dyn_page: &DynamicPage, canonical_path: &str, base_ur
     <header class="page-header">
         <h1>{title}</h1>
     </header>
-    <div class="article-image">
-        <img src="/static/images/default.jpg" alt="{title}" class="article-img">
-    </div>
     <div class="page-body">
+        <div class="article-image">
+            <img src="/static/images/default.jpg" alt="{title}" class="article-img">
+        </div>
         {content}
     </div>
 </article>"#,
@@ -218,22 +218,32 @@ pub fn render_static_page(
     );
     html.push_str(&head);
 
+    // Only show category/tags meta on non-home pages
+    let meta = if category == "home" {
+        String::new()
+    } else {
+        format!(
+            r#"<div class="meta">
+            <span class="category">Category: {category}</span>
+            <span class="tags">Tags: {tags}</span>
+        </div>"#,
+            category = category,
+            tags = tags,
+        )
+    };
+
     html.push_str(&format!(
         r#"<article class="content-page">
     <header class="page-header">
         <h1>{title}</h1>
-        <div class="meta">
-            <span class="category">Category: {category}</span>
-            <span class="tags">Tags: {tags}</span>
-        </div>
+        {meta}
     </header>
     <div class="page-body">
         {body}
     </div>
 </article>"#,
         title = title,
-        category = category,
-        tags = tags,
+        meta = meta,
         body = body_html
     ));
 

@@ -465,7 +465,7 @@ Cross-reference engine:
 | **Links** | Blue `#4fc3f7`, red hover `#e94560` |
 | **Images (page body)** | `max-width: 100%`, `height: auto`, `display: inline`, rounded corners — prevents overflow and keeps images inline with text |
 | **Article image** | `.article-img`: `max-width: 200px`, centered, small inline thumbnail at top of article |
-| **Card image** | `.card-img`: `max-height: 120px`, centered, thumbnail on home page preview cards |
+| **Card image** | `.card-top` flex layout: image `80x80` cover on left, title + meta stacked on right, preview text below |
 | **Code blocks** | Dark background `#0f3460` |
 | **Search form** | Dark input with red focus border, red submit button |
 | **Footer** | Dark background, centered, subtle text |

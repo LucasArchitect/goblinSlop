@@ -63,30 +63,32 @@ pub async fn home_page(
         let tag_str = entry.tags.join(" · ");
 
         let img_file = entry.image.as_deref().unwrap_or("default.jpg");
-        let card_image = format!(
-            r#"<div class="card-image">
-                <img src="/static/images/{}" alt="{}" class="card-img">
-            </div>"#,
-            img_file, entry.title
-        );
 
         cards_html.push_str(&format!(
             r#"<a href='/{}' class='article-card'>
-                <div class='card-header'>
-                    <span class='card-date'>{}</span>
-                    <span class='category-badge'>{}</span>
+                <div class='card-top'>
+                    <div class='card-image'>
+                        <img src="/static/images/{}" alt="{}" class="card-img">
+                    </div>
+                    <div class='card-top-right'>
+                        <h3 class='card-title'>{}</h3>
+                        <div class='card-header'>
+                            <span class='card-date'>{}</span>
+                            <span class='category-badge'>{}</span>
+                        </div>
+                    </div>
                 </div>
-                {card_image}
-                <h3 class='card-title'>{}</h3>
                 <p class='card-preview'>{}</p>
                 <div class='card-footer'>
                     <span class='card-tags'>{}</span>
                 </div>
             </a>"#,
             entry.slug,
+            img_file,
+            entry.title,
+            entry.title,
             date_str,
             entry.category,
-            entry.title,
             preview,
             tag_str,
         ));

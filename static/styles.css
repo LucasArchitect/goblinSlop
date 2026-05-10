@@ -328,8 +328,8 @@ body {
 
 /* ── Article image ──────────────────────────────────── */
 .article-image {
-    text-align: center;
-    margin-bottom: 1.5rem;
+    float: left;
+    margin: 0.3rem 1.2rem 0.6rem 0;
 }
 
 .article-img {
@@ -342,19 +342,28 @@ body {
 }
 
 /* ── Card image ─────────────────────────────────────── */
-.card-image {
+.card-top {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
     margin-bottom: 0.7rem;
-    text-align: center;
+}
+
+.card-image {
+    flex-shrink: 0;
 }
 
 .card-img {
-    max-width: 100%;
-    height: auto;
-    max-height: 120px;
+    width: 80px;
+    height: 80px;
     border-radius: 6px;
-    display: inline;
-    vertical-align: middle;
-    object-fit: contain;
+    display: block;
+    object-fit: cover;
+}
+
+.card-top-right {
+    flex: 1;
+    min-width: 0;
 }
 
 /* ── Page body content ──────────────────────────────── */
