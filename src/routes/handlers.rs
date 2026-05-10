@@ -19,7 +19,6 @@ pub struct SearchQuery {
 pub struct ApiResponse<T: Serialize> {
     pub success: bool,
     pub data: T,
-    pub source: String,
 }
 
 /// Normalize a slug: replace underscores with hyphens for canonical form
@@ -188,7 +187,6 @@ pub async fn api_content(
     Json(ApiResponse {
         success: entry.is_some(),
         data: entry,
-        source: "static".to_string(),
     })
 }
 
@@ -207,7 +205,6 @@ pub async fn api_dynamic(
     Json(ApiResponse {
         success: true,
         data: Some(page),
-        source: "deterministic".to_string(),
     })
 }
 
@@ -223,7 +220,6 @@ pub async fn api_search(
     Json(ApiResponse {
         success: true,
         data: results,
-        source: "search".to_string(),
     })
 }
 
@@ -233,6 +229,5 @@ pub async fn api_all(State(state): State<AppState>) -> Json<ApiResponse<Vec<Cont
     Json(ApiResponse {
         success: true,
         data: entries,
-        source: "static".to_string(),
     })
 }
