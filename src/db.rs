@@ -154,6 +154,7 @@ pub fn search_content(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEn
     Ok(entries)
 }
 
+#[allow(dead_code)]
 pub fn insert_dynamic_page(conn: &Connection, page: &DynamicPage) -> SqlResult<()> {
     conn.execute(
         "INSERT OR REPLACE INTO dynamic_pages (path, title, content, keywords)
@@ -163,6 +164,7 @@ pub fn insert_dynamic_page(conn: &Connection, page: &DynamicPage) -> SqlResult<(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn get_dynamic_page(conn: &Connection, path: &str) -> SqlResult<Option<DynamicPage>> {
     let mut stmt = conn.prepare(
         "SELECT path, title, content, keywords FROM dynamic_pages WHERE path = ?1",

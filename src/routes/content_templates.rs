@@ -166,11 +166,12 @@ const RELATED_SECTION_BODIES: &[&str] = &[
     "{kw} occupies a specific point on the Schizo-Goblin-Post-Truth-AI-Slop-Miku Continuum, a fact that has been confirmed by at least three independent researchers and an unspecified number of goblins. The continuum suggests that {kw} is not an isolated phenomenon but part of a larger pattern of collective perception.",
 ];
 
-/// Generate a related section for a keyword — returns clean raw HTML (no markdown processing).
-pub fn generate_related_section(keyword: &str) -> String {
-    use rand::{seq::SliceRandom, Rng};
+use rand::Rng;
 
-    let idx = rand::thread_rng().gen_range(0..RELATED_SECTION_TITLES.len());
+/// Generate a related section for a keyword — returns clean raw HTML (no markdown processing).
+/// Uses the provided RNG for deterministic output.
+pub fn generate_related_section<R: Rng>(keyword: &str, rng: &mut R) -> String {
+    let idx = rng.gen_range(0..RELATED_SECTION_TITLES.len());
     let title = RELATED_SECTION_TITLES[idx].replace("{kw}", keyword);
     let body = RELATED_SECTION_BODIES[idx].replace("{kw}", keyword);
 

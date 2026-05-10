@@ -123,12 +123,7 @@ pub async fn dynamic_fallback(
         return Ok(Html(render_content_page(&entry, &format!("/{}", slug), &state.base_url)).into_response());
     }
 
-    // Check cached dynamic
-    if let Some(dyn_page) = db::get_dynamic_page(&db, &slug).unwrap_or(None) {
-        return Ok(Html(render_dynamic_page(&dyn_page, &format!("/{}", slug), &state.base_url)).into_response());
-    }
-
-    // Generate new
+    // Generate new (deterministic from path — no DB caching needed)
     let keywords = parse_path_into_keywords(&slug);
     let final_keywords = if keywords.is_empty() {
         vec!["goblin".to_string(), "mystery".to_string(), slug.clone()]
@@ -137,7 +132,6 @@ pub async fn dynamic_fallback(
     };
 
     let dyn_page = generate_dynamic_page_content(&slug, &final_keywords);
-    let _ = db::insert_dynamic_page(&db, &dyn_page);
 
     Ok(Html(render_dynamic_page(&dyn_page, &format!("/{}", slug), &state.base_url)).into_response())
 }
@@ -199,19 +193,9 @@ pub async fn api_content(
 }
 
 pub async fn api_dynamic(
-    State(state): State<AppState>,
+    State(_state): State<AppState>,
     Path(path): Path<String>,
 ) -> Json<ApiResponse<Option<DynamicPage>>> {
-    let db = state.db.lock().unwrap();
-
-    if let Some(page) = db::get_dynamic_page(&db, &path).unwrap_or(None) {
-        return Json(ApiResponse {
-            success: true,
-            data: Some(page),
-            source: "cached_dynamic".to_string(),
-        });
-    }
-
     let keywords = parse_path_into_keywords(&path);
     let final_keywords = if keywords.is_empty() {
         vec!["goblin".to_string(), "mystery".to_string(), path.clone()]
@@ -220,11 +204,10 @@ pub async fn api_dynamic(
     };
 
     let page = generate_dynamic_page_content(&path, &final_keywords);
-    let _ = db::insert_dynamic_page(&db, &page);
     Json(ApiResponse {
         success: true,
         data: Some(page),
-        source: "new_dynamic".to_string(),
+        source: "deterministic".to_string(),
     })
 }
 

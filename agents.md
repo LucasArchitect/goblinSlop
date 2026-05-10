@@ -45,7 +45,7 @@ Key features:
 - **No 404 errors** — every path returns HTTP 200 with goblin content
 - **AI/Bot friendly** — JSON-LD structured data, semantic HTML, raw text endpoints, JSON API
 - **Unified JSON format** — all content in individual `.json` files under `data/content/`, each with `{id, title, slug, body_markdown, category, tags, is_dynamic, date_added}`
-- **Cached dynamics** — dynamically generated pages are cached in SQLite so repeat requests are fast
+- **Deterministic dynamic generation** — same URL path always produces identical output via seeded RNG; no DB caching needed
 - **SEO optimized** — canonical URLs (absolute), sitemap.xml, 301 redirects for duplicate slug variants, unique page titles, meta robots tags
 - **Pure Rust templating** — no template engine dependency; HTML is built with `String::replace()`
 - **Routes as module directory** — handlers, templates, and generators are split across separate files
@@ -77,11 +77,10 @@ Key features:
 3. If the path contains underscores (e.g. `/goblin_lore`), the fallback handler issues a **301 MOVED_PERMANENTLY** redirect to the canonical hyphen form (`/goblin-lore`)
 4. Fallback handler checks SQLite for static content matching the path
 5. If static content found → render using `templates::render_content_page()` with the stored HTML, absolute canonical URL
-6. If not found → check `dynamic_pages` cache table
-7. If cached → render using `templates::render_dynamic_page()`
-8. If not cached → parse path into keywords, generate content using `generator::generate_dynamic_page_content()`, store in cache, render
-9. All pages include JSON-LD structured data, absolute canonical URLs, and meta robots tags in the `<head>`
-10. **No "dynamically generated" badges, summon messages, or AI notes are shown to the user** — all pages appear equally authentic
+6. If not found → parse path into keywords, generate content deterministically using `generator::generate_dynamic_page_content()` (seeded RNG from URL path), render directly
+7. **No DB caching of dynamic pages** — generation is deterministic so the same path always produces identical output without cache lookups or writes
+8. All pages include JSON-LD structured data, absolute canonical URLs, and meta robots tags in the `<head>`
+9. **No "dynamically generated" badges, summon messages, or AI notes are shown to the user** — all pages appear equally authentic
 
 ### Thread Safety Model
 
@@ -474,7 +473,7 @@ Full crawl allowed. The sitemap is discoverable via `/sitemap.xml`.
 |----------|--------|-------------|----------|
 | `/api/all` | GET | All content entries | `{ success: true, data: [...], source: "static" }` |
 | `/api/content/:slug` | GET | Single entry by slug | `{ success: true/false, data: {...}, source: "static" }` |
-| `/api/dynamic/*path` | GET | Dynamic page by path | `{ success: true, data: {...}, source: "cached_dynamic"|"new_dynamic" }` |
+| `/api/dynamic/*path` | GET | Dynamic page by path | `{ success: true, data: {...}, source: "deterministic" }` |
 | `/api/search?q=...` | GET | Search results | `{ success: true, data: [...], source: "search" }` |
 
 ### Response Format
@@ -496,12 +495,14 @@ All JSON responses follow a consistent structure:
 When a path doesn't match any static content:
 
 1. Parse path into keywords (split by `/`, `-`, `_`, lowercase, filter stop words)
-2. Select random text from template arrays: title, intro, body, verdict
-3. Fill `{keyword}` placeholders with the input keywords
-4. Generate related keyword sections using `generate_related_section()`
-5. Cross-reference real pages + generate fake pages (identical CSS)
-6. Cache result in SQLite `dynamic_pages` table
+2. Derive a deterministic RNG seed from the URL path (via `DefaultHasher`)
+3. Select templated text from arrays: title, intro, body, verdict (using seeded RNG)
+4. Fill `{keyword}` placeholders with the input keywords
+5. Generate related keyword sections using `generate_related_section()`
+6. Cross-reference real pages + generate fake pages (identical CSS)
 7. Render full HTML page
+
+**Key property**: The seeded RNG ensures that the same URL path always produces identical output. No DB caching is needed. Generation is purely pure-functional — deterministic from path alone.
 
 All dynamic pages appear identical to static pages — no badges, notes, or indicators of generation.
 
@@ -511,15 +512,21 @@ All dynamic pages appear identical to static pages — no badges, notes, or indi
 
 ### Unit Tests
 
-Located in `src/json_content_loader.rs` (`#[cfg(test)]` module):
+Located in `src/json_content_loader.rs` and `src/routes/generator.rs` (`#[cfg(test)]` modules):
 
-**`test_deserialize_single_content_unit`**: Loads one actual JSON file (`data/content/goblin_lore.json`), deserializes into `JsonContentEntry`, verifies all fields: id, slug, title, body_markdown (starts with heading), category, tags, date_added (ISO 8601 format), is_dynamic.
+**`test_deserialize_single_content_unit`** (in `json_content_loader.rs`): Loads one actual JSON file (`data/content/goblin_lore.json`), deserializes into `JsonContentEntry`, verifies all fields: id, slug, title, body_markdown (starts with heading), category, tags, date_added (ISO 8601 format), is_dynamic.
+
+**`test_generated_content_is_deterministic`** (in `generator.rs`): Generates dynamic content twice from the same path and asserts the title and content are byte-for-byte identical.
+
+**`test_different_paths_produce_different_content`** (in `generator.rs`): Generates dynamic content from two different paths and asserts the outputs differ.
 
 ```bash
 cargo test --release
-# running 1 test
+# running 3 tests
 # test json_content_loader::tests::test_deserialize_single_content_unit ... ok
-# test result: ok. 1 passed; 0 failed; 0 ignored
+# test routes::generator::tests::test_different_paths_produce_different_content ... ok
+# test routes::generator::tests::test_generated_content_is_deterministic ... ok
+# test result: ok. 3 passed; 0 failed; 0 ignored
 ```
 
 ---

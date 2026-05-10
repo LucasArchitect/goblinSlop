@@ -1,5 +1,6 @@
 // ============================================================
 // References — Real page references + random fake ref generator
+//   Deterministic: uses provided RNG (seeded from URL path)
 // ============================================================
 
 use rand::seq::SliceRandom;
@@ -105,12 +106,10 @@ const REFERENCE_SECTION_TEMPLATES: &[&str] = &[
 const _FURTHER_DESCENT_TEMPLATES: &[&str] = &[];
 
 // ── Generate a random fake page reference ───────────────────
-fn generate_random_fake_ref() -> (String, String, String) {
-    let mut rng = rand::thread_rng();
-
-    let a1 = FAKE_SLUG_PARTS_A.choose(&mut rng).unwrap();
-    let a2 = FAKE_SLUG_PARTS_A.choose(&mut rng).unwrap();
-    let b = FAKE_SLUG_PARTS_B.choose(&mut rng).unwrap();
+fn generate_random_fake_ref<R: Rng>(rng: &mut R) -> (String, String, String) {
+    let a1 = FAKE_SLUG_PARTS_A.choose(rng).unwrap();
+    let a2 = FAKE_SLUG_PARTS_A.choose(rng).unwrap();
+    let b = FAKE_SLUG_PARTS_B.choose(rng).unwrap();
 
     let slug = if a1 == a2 {
         format!("{}-{}", a1, b)
@@ -126,31 +125,42 @@ fn generate_random_fake_ref() -> (String, String, String) {
         }
     };
 
-    let template = FAKE_TITLE_TEMPLATES.choose(&mut rng).unwrap();
+    let template = FAKE_TITLE_TEMPLATES.choose(rng).unwrap();
     let title = template
         .replace("{A}", &cap(a1))
         .replace("{B}", &cap(b));
 
     let tags = ["schizo", "altman", "miku", "slop", "goblin", "tricks", "lore"];
-    let tag = tags.choose(&mut rng).unwrap().to_string();
+    let _tag = tags.choose(rng).unwrap().to_string();
 
-    (slug, title, tag)
+    (slug, title, _tag)
 }
 
 // ── Pick N random distinct real refs that are NOT the current slug ─────────────────
-fn pick_random_real_refs(count: usize, exclude_slug: Option<&str>) -> Vec<&(&str, &str, &str)> {
+fn pick_random_real_refs<'a, R: Rng>(count: usize, exclude_slug: Option<&str>, rng: &mut R) -> Vec<&'a (&'a str, &'a str, &'a str)> {
     let mut candidates: Vec<&(&str, &str, &str)> = REAL_PAGE_REFERENCES
         .iter()
         .filter(|r| exclude_slug.map_or(true, |excl| r.0 != excl))
         .collect();
-    candidates.shuffle(&mut rand::thread_rng());
+    candidates.shuffle(rng);
     candidates.truncate(count);
     candidates
 }
 
 /// Build cross-reference section from keywords only (used by dynamic page generator).
-pub fn generate_references_html(keywords: &[String]) -> String {
-    generate_references_html_ex(keywords, None, &[])
+/// Uses the provided RNG for deterministic output.
+#[allow(dead_code)]
+pub fn generate_references_html<R: Rng>(keywords: &[String], rng: &mut R) -> String {
+    generate_references_html_ex(keywords, None, &[], rng)
+}
+
+/// Convenience wrapper: generates references using thread-local RNG (for static content pages).
+pub fn generate_references_html_thread_rng(
+    keywords: &[String],
+    exclude_slug: Option<&str>,
+    explicit_slugs: &[String],
+) -> String {
+    generate_references_html_ex(keywords, exclude_slug, explicit_slugs, &mut rand::thread_rng())
 }
 
 /// Extended version with explicit reference slugs (from JSON `references` field)
@@ -158,10 +168,12 @@ pub fn generate_references_html(keywords: &[String]) -> String {
 ///
 /// `explicit_slugs` — target slugs declared in the article's JSON `references` field.
 ///                    These are always shown when they match, guaranteeing meaningful links.
-pub fn generate_references_html_ex(
+/// `rng` — random number generator for deterministic output.
+pub fn generate_references_html_ex<R: Rng>(
     keywords: &[String],
     exclude_slug: Option<&str>,
     explicit_slugs: &[String],
+    rng: &mut R,
 ) -> String {
     // ── 1. Collect real refs: explicit slugs first, then keyword-match others ──
     let mut matched_refs: Vec<&(&str, &str, &str)> = Vec::new();
@@ -205,31 +217,31 @@ pub fn generate_references_html_ex(
 
     // ── 2. Always have at least 3 distinct real refs ────────────
     let mut real_refs: Vec<&(&str, &str, &str)> = matched_refs;
-    let desired_real_count = rand::thread_rng().gen_range(3..=4);
+    let desired_real_count = rng.gen_range(3..=4);
 
     if real_refs.len() < desired_real_count {
         let needed = desired_real_count - real_refs.len();
-        let extras = pick_random_real_refs(needed, exclude_slug);
+        let extras = pick_random_real_refs(needed, exclude_slug, rng);
         for r in extras {
             if seen_slugs.insert(r.0) {
                 real_refs.push(r);
             }
         }
     } else if real_refs.len() > desired_real_count {
-        real_refs.shuffle(&mut rand::thread_rng());
+        real_refs.shuffle(rng);
         real_refs.truncate(desired_real_count);
     }
 
     // ── 3. Generate fake refs (3-5) ─────────────────────────────
-    let fake_count = rand::thread_rng().gen_range(3..=5);
+    let fake_count = rng.gen_range(3..=5);
     let mut fake_refs: Vec<(String, String, String)> = Vec::new();
     for _ in 0..fake_count {
-        fake_refs.push(generate_random_fake_ref());
+        fake_refs.push(generate_random_fake_ref(rng));
     }
 
     // ── 4. Render unified reference section ─────────────────────
     let section_title = REFERENCE_SECTION_TEMPLATES
-        .choose(&mut rand::thread_rng())
+        .choose(rng)
         .unwrap_or(&"Cross-References");
 
     let mut html = String::new();

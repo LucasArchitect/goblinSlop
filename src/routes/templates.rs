@@ -1,5 +1,5 @@
 use crate::db::{ContentEntry, DynamicPage};
-use super::references::generate_references_html_ex;
+use super::references::generate_references_html_thread_rng;
 
 // ============================================================
 // HTML Template Constants
@@ -134,7 +134,7 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
         .collect();
-    html.push_str(&generate_references_html_ex(&refs_keywords, Some(&entry.slug), &explicit_slugs));
+    html.push_str(&generate_references_html_thread_rng(&refs_keywords, Some(&entry.slug), &explicit_slugs));
 
     html.push_str(BASE_HTML_FOOT);
     html
