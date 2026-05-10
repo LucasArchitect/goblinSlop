@@ -109,6 +109,7 @@ pub fn search_content(conn: &Connection, query: &str) -> SqlResult<Vec<ContentEn
         .collect()
 }
 
+#[allow(dead_code)] // Used in tests, potentially for future dynamic page caching API
 pub fn get_dynamic_page(conn: &Connection, path: &str) -> SqlResult<Option<DynamicPage>> {
     let mut stmt = conn.prepare(
         "SELECT path, title, content, keywords FROM dynamic_pages WHERE path = ?1",
@@ -150,6 +151,7 @@ pub fn get_content_by_category(conn: &Connection, category: &str) -> SqlResult<V
         .collect()
 }
 
+#[allow(dead_code)] // Used in tests, potentially for future API endpoints (tag cloud, category page)
 pub fn get_all_tags(conn: &Connection) -> SqlResult<Vec<(String, u64)>> {
     let mut stmt = conn.prepare(
         "SELECT tag, COUNT(*) as count FROM content_tags GROUP BY tag ORDER BY tag"
@@ -158,6 +160,7 @@ pub fn get_all_tags(conn: &Connection) -> SqlResult<Vec<(String, u64)>> {
         .collect()
 }
 
+#[allow(dead_code)] // Used in tests, potentially for future API endpoints (tag cloud, category page)
 pub fn get_all_categories(conn: &Connection) -> SqlResult<Vec<(String, u64)>> {
     let mut stmt = conn.prepare(
         "SELECT category, COUNT(*) as count FROM content GROUP BY category ORDER BY category"
