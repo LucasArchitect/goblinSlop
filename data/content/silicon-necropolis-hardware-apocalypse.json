@@ -16,30 +16,12 @@
     "Rust",
     "Steam Deck"
   ],
+  "is_dynamic": false,
+  "date_added": "2026-05-11T17:32:00Z",
   "references": [
     "linux-desktop-siege",
     "status-golden-age-of-iron-and-code",
     "quantum-revolution",
     "eve-online-deepmind-fenris-ai-testing"
-  ],
-  "is_dynamic": false,
-  "date_added": "2026-05-11T17:32:00Z",
-  "sources": [
-    {
-      "name": "Tom's Hardware",
-      "url": "https://www.tomshardware.com/tech-industry/samsung-and-union-resume-talks-10-days-before-planned-18-day-chip-factory-strike"
-    },
-    {
-      "name": "Tom's Hardware",
-      "url": "https://www.tomshardware.com/pc-components/ddr5/scammers-are-selling-fake-ddr5-with-empty-plastic-chips-relabeled-to-pass-as-legit"
-    },
-    {
-      "name": "Tom's Hardware",
-      "url": "https://www.tomshardware.com/pc-components/cpus/arms-usd2-billion-in-agi-cpu-sales-are-still-not-enough-to-penetrate-5-percent-of-overall-market-share"
-    },
-    {
-      "name": "NVIDIA",
-      "url": "https://nvlabs.github.io/cuda-oxide/index.html"
-    }
   ]
 }

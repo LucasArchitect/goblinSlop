@@ -14,27 +14,13 @@
     "Mythos",
     "autonomous agents"
   ],
+  "is_dynamic": false,
+  "date_added": "2026-05-11T17:30:00Z",
   "references": [
     "ai-agent-apocalypse",
     "local-ai-rebellion",
     "claude-agents-dreaming-goblin-visions",
     "status-ai-human-crisis",
     "ai-goblin-schizo-miku"
-  ],
-  "is_dynamic": false,
-  "date_added": "2026-05-11T17:30:00Z",
-  "sources": [
-    {
-      "name": "XDA Developers",
-      "url": "https://www.xda-developers.com/connected-claude-to-my-calendar-email-and-notes-and-stopped-feeling-like-a-chatbot/"
-    },
-    {
-      "name": "Ars Technica",
-      "url": "https://arstechnica.com/"
-    },
-    {
-      "name": "Hacker News",
-      "url": "https://news.ycombinator.com/"
-    }
   ]
 }

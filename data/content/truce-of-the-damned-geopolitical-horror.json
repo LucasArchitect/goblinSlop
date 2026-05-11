@@ -15,25 +15,11 @@
     "Trump",
     "sanctions"
   ],
+  "is_dynamic": false,
+  "date_added": "2026-05-11T17:31:00Z",
   "references": [
     "geopolitical-blaze",
     "status-syndrome-of-the-split-2026",
     "trump-ai-safety-hypocrisy"
-  ],
-  "is_dynamic": false,
-  "date_added": "2026-05-11T17:31:00Z",
-  "sources": [
-    {
-      "name": "Japan Today",
-      "url": "https://japantoday.com/category/world/russia-accuses-ukraine-of-violating-u.s.-brokered-three-day-truce"
-    },
-    {
-      "name": "SCMP",
-      "url": "https://www.scmp.com/news/world/europe/article/3353190/uk-sanctions-85-people-and-entities-over-pro-kremlin-narratives"
-    },
-    {
-      "name": "Tom's Hardware",
-      "url": "https://www.tomshardware.com/networking/irgc-linked-media-outlines-plan-to-tax-and-control-undersea-internet-cables-in-the-hormuz-strait"
-    }
   ]
 }
