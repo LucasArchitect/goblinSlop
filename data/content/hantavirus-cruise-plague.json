@@ -20,5 +20,19 @@
     "goblin-mode-2026-global-chaos-index"
   ],
   "is_dynamic": false,
-  "date_added": "2026-05-10T20:44:00Z"
+  "date_added": "2026-05-10T20:44:00Z",
+  "sources": [
+    {
+      "name": "The Onion",
+      "url": "https://www.theonion.com/"
+    },
+    {
+      "name": "Ars Technica",
+      "url": "https://arstechnica.com/"
+    },
+    {
+      "name": "Yle News",
+      "url": "https://yle.fi/"
+    }
+  ]
 }

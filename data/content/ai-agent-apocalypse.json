@@ -23,5 +23,23 @@
     "goblin-tricks"
   ],
   "is_dynamic": false,
-  "date_added": "2026-05-10T20:30:00Z"
+  "date_added": "2026-05-10T20:30:00Z",
+  "sources": [
+    {
+      "name": "GitHub Blog",
+      "url": "https://github.blog/"
+    },
+    {
+      "name": "JetBrains Blog",
+      "url": "https://www.jetbrains.com/blogs/"
+    },
+    {
+      "name": "GitLab Blog",
+      "url": "https://about.gitlab.com/blog/"
+    },
+    {
+      "name": "XDA Developers",
+      "url": "https://www.xda-developers.com/"
+    }
+  ]
 }

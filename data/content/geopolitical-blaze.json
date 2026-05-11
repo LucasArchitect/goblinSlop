@@ -23,5 +23,19 @@
     "goblin-mode-2026-global-chaos-index"
   ],
   "is_dynamic": false,
-  "date_added": "2026-05-10T20:38:00Z"
+  "date_added": "2026-05-10T20:38:00Z",
+  "sources": [
+    {
+      "name": "Japan Today",
+      "url": "https://japantoday.com/category/world"
+    },
+    {
+      "name": "SCMP",
+      "url": "https://www.scmp.com/news/china/diplomacy"
+    },
+    {
+      "name": "Ars Technica",
+      "url": "https://arstechnica.com/"
+    }
+  ]
 }

@@ -22,5 +22,19 @@
     "goblin-mode-2026-global-chaos-index"
   ],
   "is_dynamic": false,
-  "date_added": "2026-05-10T20:42:00Z"
+  "date_added": "2026-05-10T20:42:00Z",
+  "sources": [
+    {
+      "name": "Hacker News",
+      "url": "https://news.ycombinator.com/"
+    },
+    {
+      "name": "XDA Developers",
+      "url": "https://www.xda-developers.com/"
+    },
+    {
+      "name": "Hackaday",
+      "url": "https://hackaday.com/"
+    }
+  ]
 }

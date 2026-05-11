@@ -22,5 +22,19 @@
     "goblin-mode-2026-global-chaos-index"
   ],
   "is_dynamic": false,
-  "date_added": "2026-05-10T20:36:00Z"
+  "date_added": "2026-05-10T20:36:00Z",
+  "sources": [
+    {
+      "name": "NASA",
+      "url": "https://www.nasa.gov/"
+    },
+    {
+      "name": "SpaceX YouTube",
+      "url": "https://www.youtube.com/user/SpaceX"
+    },
+    {
+      "name": "Ars Technica",
+      "url": "https://arstechnica.com/space/"
+    }
+  ]
 }

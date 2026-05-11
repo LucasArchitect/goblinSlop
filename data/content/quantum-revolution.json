@@ -20,5 +20,19 @@
     "ai-goblin-schizo-miku"
   ],
   "is_dynamic": false,
-  "date_added": "2026-05-10T20:40:00Z"
+  "date_added": "2026-05-10T20:40:00Z",
+  "sources": [
+    {
+      "name": "Phoronix",
+      "url": "https://www.phoronix.com/"
+    },
+    {
+      "name": "Ars Technica",
+      "url": "https://arstechnica.com/science/"
+    },
+    {
+      "name": "Tom's Hardware",
+      "url": "https://www.tomshardware.com/"
+    }
+  ]
 }

@@ -24,5 +24,19 @@
     "eve-online-deepmind-fenris-ai-testing"
   ],
   "is_dynamic": false,
-  "date_added": "2026-05-10T20:34:00Z"
+  "date_added": "2026-05-10T20:34:00Z",
+  "sources": [
+    {
+      "name": "Eurogamer",
+      "url": "https://www.eurogamer.net/"
+    },
+    {
+      "name": "Ars Technica",
+      "url": "https://arstechnica.com/gaming/"
+    },
+    {
+      "name": "Tom's Hardware",
+      "url": "https://www.tomshardware.com/"
+    }
+  ]
 }
