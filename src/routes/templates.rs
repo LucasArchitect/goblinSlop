@@ -33,15 +33,22 @@ pub fn render_category(category: &str) -> String {
 // HTML Template Constants
 // ============================================================
 
-const BASE_HTML_HEAD: &str = r#"<!DOCTYPE html>
+const BASE_HTML_HEAD: &str = r##"<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f140f">
     <title>{TITLE}</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-    <link rel="apple-touch-icon" href="/static/images/default.jpg">
+    <!-- Favicon pack — modern multi-format -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/static/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/static/apple-touch-icon-167x167.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/static/apple-touch-icon-120x120.png">
+    <link rel="manifest" href="/static/site.webmanifest">
     <meta name="description" content="{DESCRIPTION}">
     <meta name="robots" content="{ROBOTS}">
     <meta name="keywords" content="{KEYWORDS}">
@@ -62,7 +69,7 @@ const BASE_HTML_HEAD: &str = r#"<!DOCTYPE html>
     <meta name="twitter:description" content="{OG_DESC}">
     <meta name="twitter:image" content="{OG_IMAGE}">
     <!-- RSS Feed -->
-    <link rel="alternate" type="application/rss+xml" title="GoblinSlop — Goblin Lore & Slop" href="/feed.xml">
+    <link rel="alternate" type="application/rss+xml" title="GoblinSlop - Goblin Lore & Slop" href="/feed.xml">
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -90,7 +97,7 @@ const BASE_HTML_HEAD: &str = r#"<!DOCTYPE html>
 <body>
     <nav class="goblin-nav">
         <div class="nav-inner">
-            <a href="/" class="nav-logo">🧌 GoblinSlop</a>
+            <a href="/" class="nav-logo">GoblinSlop</a>
             <div class="nav-links">
                 <a href="/">Home</a>
                 <a href="/goblin-lore">Lore</a>
@@ -102,14 +109,14 @@ const BASE_HTML_HEAD: &str = r#"<!DOCTYPE html>
         </div>
     </nav>
     <main class="content-wrapper">
-"#;
+"##;
 
-const BASE_HTML_FOOT: &str = r#"    </main>
+const BASE_HTML_FOOT: &str = r##"    </main>
     <footer class="goblin-footer">
-        <p>🧌 GoblinSlop — A chaotic collection of goblin knowledge</p>
+        <p>GoblinSlop - A chaotic collection of goblin knowledge</p>
     </footer>
 </body>
-</html>"#;
+</html>"##;
 
 /// Escape HTML entities for safe embedding in JSON-LD
 fn json_escape(s: &str) -> String {
