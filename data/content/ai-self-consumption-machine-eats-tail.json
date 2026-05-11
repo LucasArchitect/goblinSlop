@@ -14,7 +14,13 @@
     "Mythos",
     "autonomous agents"
   ],
-  "references": [],
+  "references": [
+    "ai-agent-apocalypse",
+    "local-ai-rebellion",
+    "claude-agents-dreaming-goblin-visions",
+    "status-ai-human-crisis",
+    "ai-goblin-schizo-miku"
+  ],
   "is_dynamic": false,
   "date_added": "2026-05-11T17:30:00Z",
   "sources": [

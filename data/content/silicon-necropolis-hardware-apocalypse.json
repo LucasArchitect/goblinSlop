@@ -16,7 +16,12 @@
     "Rust",
     "Steam Deck"
   ],
-  "references": [],
+  "references": [
+    "linux-desktop-siege",
+    "status-golden-age-of-iron-and-code",
+    "quantum-revolution",
+    "eve-online-deepmind-fenris-ai-testing"
+  ],
   "is_dynamic": false,
   "date_added": "2026-05-11T17:32:00Z",
   "sources": [
