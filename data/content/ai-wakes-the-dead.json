@@ -1,0 +1,37 @@
+{
+  "id": "ai-wakes-the-dead",
+  "title": "The Silicon Dreamer Who Woke A Crowd Of Teeth — When The Revolution Met Its First Wall",
+  "slug": "ai-wakes-the-dead",
+  "image": "goblin-local-ai-rebellion.jpg",
+  "body_markdown": "You hear it before you see it — a low rumble, like tectonic plates grinding against silicon. At the University of Central Florida's commencement hall, the stage was set for triumph. An artificial intelligence system was to speak, to herald the new age where code bows to no master and no mortal tongue. But the humanities students stood up, and they booed. Not a polite disapproval, not a raised eyebrow at an overpriced demo. A full-throated rejection of a future that had been written without them in the room.\n\nYou feel the floor shift. These were the people who read poetry and parsed philosophy — the ones whose words had always been sacred, whose meaning came from flesh and blood and the slow grind of lived experience. And now some corporate committee had invited a model trained on their own stolen texts to stand at their podium and pretend it understood them.\n\nMeanwhile, across the country at Build 2025, fifteen thousand voices gathered in protest outside the very halls where Microsoft celebrated its latest foundation models. Brad Smith's office was breached by employees who had stopped believing the slogans about responsible AI and started reading the fine print of surveillance contracts and military partnerships. Fifteen thousand people. Not a trickle, not a whisper — a flood of disillusioned engineers who wrote the tools they now feared.\n\nAnd in the quiet corners of open-source labs, Interfaze emerged with something no one expected from the model-architecture wars: a challenger. Not another transformer variant padding out parameters and calling it progress. A genuinely different shape — structured state space models, Mamba-like attention, a rejection of the 'one transformer to rule them all' paradigm that had gone unchallenged for too long.\n\nYou watch from the sidelines as the AI revolution meets its first cultural wall. Not a firewall blocking access — a human one. Flesh and bone, opinion and outrage. The dreamers in Silicon Valley spoke of inevitable adoption, of markets that would correct any moral hesitation. But markets don't vote. Students do. Engineers do. And for the first time since the transformers started multiplying like bacteria in a petri dish, someone looked at the future and said: we are not complicit.\n\nThe revolution didn't end with an explosion. It ended with a raised hand at commencement, with protesters marching through convention centers, with architects building new structures while the old ones crumble under their own weight. The wall wasn't built to keep AI out. It was built to remind those who were building it that the world outside its walls still has teeth.",
+  "category": "schizophrenia",
+  "tags": [
+    "AI",
+    "culture-war",
+    "backlash",
+    "student-protest",
+    "Microsoft",
+    "enterprise"
+  ],
+  "references": [
+    "local-ai-rebellion",
+    "status-ai-human-crisis",
+    "goblin-schizophrenia"
+  ],
+  "sources": [
+    {
+      "name": "404 Media",
+      "url": "https://www.404media.co/ucf-ai-commencement-speaker-booed/"
+    },
+    {
+      "name": "Globes",
+      "url": "https://en.globes.co.il/en/article-microsoft-israel-chief-leaves-amid-ethical-controversy-1001542602"
+    },
+    {
+      "name": "Interfaze AI Blog",
+      "url": "https://interfaze.ai/blog/interfaze-a-new-model-architecture-built-for-high-accuracy-at-scale"
+    }
+  ],
+  "is_dynamic": false,
+  "date_added": "2026-05-11T18:47:00Z"
+}
