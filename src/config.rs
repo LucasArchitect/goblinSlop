@@ -12,7 +12,7 @@ use std::env;
 /// | `GOBLIN_CONTENT_DIR` | `content` | Directory containing markdown files |
 /// | `GOBLIN_STATIC_DIR` | `static` | Directory containing static assets |
 /// | `GOBLIN_DATA_DIR` | `data` | Directory containing scraped data |
-/// | `GOBLIN_BASE_URL` | `http://goblin.geno.su` | Base URL for canonical links & sitemap |
+/// | `GOBLIN_BASE_URL` | `https://goblin.geno.su` | Base URL for canonical links & sitemap |
 #[derive(Debug, Clone)]
 pub struct Config {
     pub host: String,
@@ -35,7 +35,7 @@ impl Config {
             db_path: env::var("GOBLIN_DB_PATH").unwrap_or_else(|_| "goblin_slop.db".to_string()),
             content_dir: env::var("GOBLIN_CONTENT_DIR").unwrap_or_else(|_| "data/content".to_string()),
             static_dir: env::var("GOBLIN_STATIC_DIR").unwrap_or_else(|_| "static".to_string()),
-            base_url: env::var("GOBLIN_BASE_URL").unwrap_or_else(|_| "http://goblin.geno.su".to_string()),
+            base_url: env::var("GOBLIN_BASE_URL").unwrap_or_else(|_| "https://goblin.geno.su".to_string()),
         }
     }
 

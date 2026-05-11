@@ -40,9 +40,29 @@ const BASE_HTML_HEAD: &str = r#"<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{TITLE}</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="/static/images/default.jpg">
     <meta name="description" content="{DESCRIPTION}">
     <meta name="robots" content="{ROBOTS}">
+    <meta name="keywords" content="{KEYWORDS}">
+    <meta name="author" content="GoblinSlop Editorial Collective">
     <link rel="canonical" href="{CANONICAL}">
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="{OG_TYPE}">
+    <meta property="og:url" content="{CANONICAL}">
+    <meta property="og:title" content="{OG_TITLE}">
+    <meta property="og:description" content="{OG_DESC}">
+    <meta property="og:image" content="{OG_IMAGE}">
+    <meta property="og:site_name" content="GoblinSlop">
+    <meta property="og:locale" content="en_US">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{CANONICAL}">
+    <meta name="twitter:title" content="{OG_TITLE}">
+    <meta name="twitter:description" content="{OG_DESC}">
+    <meta name="twitter:image" content="{OG_IMAGE}">
+    <!-- RSS Feed -->
+    <link rel="alternate" type="application/rss+xml" title="GoblinSlop — Goblin Lore & Slop" href="/feed.xml">
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -50,6 +70,14 @@ const BASE_HTML_HEAD: &str = r#"<!DOCTYPE html>
         "name": "{SCHEMA_NAME}",
         "description": "{SCHEMA_DESC}",
         "url": "{CANONICAL}",
+        "publisher": {
+            "@type": "Organization",
+            "name": "GoblinSlop",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://goblin.geno.su/static/images/default.jpg"
+            }
+        },
         "about": {
             "@type": "Thing",
             "name": "Goblins",
@@ -83,6 +111,16 @@ const BASE_HTML_FOOT: &str = r#"    </main>
 </body>
 </html>"#;
 
+/// Escape HTML entities for safe embedding in JSON-LD
+fn json_escape(s: &str) -> String {
+    s.replace('\\', r"\\")
+        .replace('"', r#"\""#)
+        .replace('\n', r"\n")
+        .replace('\r', "")
+        .replace('\t', "\\t")
+}
+
+/// Build the HTML head block with all meta tags including OG/Twitter cards
 fn build_head(
     title: &str,
     description: &str,
@@ -93,6 +131,10 @@ fn build_head(
     schema_name: &str,
     schema_desc: &str,
     keywords: &str,
+    og_type: &str,
+    og_title: &str,
+    og_desc: &str,
+    og_image: &str,
 ) -> String {
     let canonical = if canonical_path.starts_with("http") {
         canonical_path.to_string()
@@ -100,32 +142,48 @@ fn build_head(
         format!("{}{}", base_url.trim_end_matches('/'), canonical_path)
     };
 
-    BASE_HTML_HEAD
+    // JSON-LD requires HTML-escaped strings
+    let esc_name = json_escape(schema_name);
+    let esc_desc = json_escape(schema_desc);
+
+   BASE_HTML_HEAD
         .replace("{TITLE}", title)
         .replace("{DESCRIPTION}", description)
         .replace("{ROBOTS}", robots)
         .replace("{CANONICAL}", &canonical)
         .replace("{SCHEMA_TYPE}", schema_type)
-        .replace("{SCHEMA_NAME}", schema_name)
-        .replace("{SCHEMA_DESC}", schema_desc)
+        .replace("{SCHEMA_NAME}", &esc_name)
+        .replace("{SCHEMA_DESC}", &esc_desc)
         .replace("{KEYWORDS}", keywords)
+        .replace("{OG_TYPE}", og_type)
+        .replace("{OG_TITLE}", og_title)
+        .replace("{OG_DESC}", og_desc)
+        .replace("{OG_IMAGE}", og_image)
 }
 
 /// Render a standard content page with JSON-LD metadata
 pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url: &str) -> String {
     let mut html = String::new();
     let tags_str = entry.tags.join(", ");
+    let img_file = entry.image.as_deref().unwrap_or("default.jpg");
+    let og_image = format!("{}{}", base_url.trim_end_matches('/'), format!("/static/images/{}", img_file));
+    let og_title = &entry.title;
+    let og_desc = &format!("Goblin content: {}", entry.title);
 
     let head = build_head(
         &format!("{} - GoblinSlop", entry.title),
-        &format!("Goblin content: {}", entry.title),
+        og_desc,
         canonical_path,
         base_url,
         "index, follow",
         "Article",
         &entry.title,
-        &format!("Goblin content: {}", entry.title),
+        og_desc,
         &tags_str,
+        "Article",           // og:type
+        og_title,            // og:title
+        og_desc,             // og:description
+        &og_image,           // og:image
     );
     html.push_str(&head);
 
@@ -189,9 +247,20 @@ pub fn render_content_page(entry: &ContentEntry, canonical_path: &str, base_url:
 }
 
 /// Render a dynamically generated goblin page — picks random image from pool per request
-pub fn render_dynamic_page<R: Rng>(dyn_page: &DynamicPage, canonical_path: &str, base_url: &str, rng: &mut R) -> String {
+pub fn render_dynamic_page<R: Rng>(
+    dyn_page: &DynamicPage,
+    canonical_path: &str,
+    base_url: &str,
+    rng: &mut R,
+) -> String {
     let keywords_str = dyn_page.keywords.join(", ");
     let mut html = String::new();
+
+    // Pick random image first (for OG meta)
+    let pool = get_image_pool();
+    let img_idx = rng.gen_range(0..pool.len());
+    let selected_img = &pool[img_idx];
+    let og_image = format!("{}{}", base_url.trim_end_matches('/'), &format!("/static/images/{}", selected_img));
 
     let head = build_head(
         &format!("{} - GoblinSlop", dyn_page.title),
@@ -203,6 +272,10 @@ pub fn render_dynamic_page<R: Rng>(dyn_page: &DynamicPage, canonical_path: &str,
         &dyn_page.title,
         &format!("Goblin content related to: {}", keywords_str),
         &keywords_str,
+        "WebPage",         // og:type
+        &dyn_page.title,   // og:title
+        &format!("Goblin content about: {}", keywords_str), // og:description
+        &og_image,         // og:image
     );
     html.push_str(&head);
 
@@ -243,6 +316,10 @@ pub fn render_static_page(
 ) -> String {
     let mut html = String::new();
 
+    // Default OG image for collection pages
+    let og_image = format!("{}{}", base_url.trim_end_matches('/'), "/static/images/default.jpg");
+    let og_desc = if title.len() > 150 { &title[..150] } else { title };
+
     let head = build_head(
         &format!("{} - GoblinSlop", title),
         title,
@@ -251,8 +328,12 @@ pub fn render_static_page(
         "index, follow",
         "CollectionPage",
         title,
-        title,
+        og_desc,
         tags,
+        "WebPage",     // og:type
+        &format!("{} - GoblinSlop", title), // og:title
+        og_desc,       // og:description
+        &og_image,     // og:image
     );
     html.push_str(&head);
 
